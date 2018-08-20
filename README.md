@@ -1,6 +1,22 @@
 # proseq_2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing
 
+
+## Dependencies: 
+
+
+The pipelines depend on several common bioinformatics tools: 
+- [ ] cutadapt
+- [ ] prinseq-lite.pl
+- [ ] bwa
+- [ ] samtools
+- [ ] bedtools
+- [ ] bedGraphToBigWig (from the Kent source utilities)
+
+Please make sure you can call the bioinformatics tools from your current working directory.    
+
+
+
 ```
 Preprocesses and aligns PRO-seq data.
 
