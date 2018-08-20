@@ -1,4 +1,4 @@
-# proseq_2.0
+# proseq2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing
 
 
@@ -20,13 +20,14 @@ Please make sure you can call the bioinformatics tools from your current working
 ```
 Preprocesses and aligns PRO-seq data.
 
-Takes *.fastq.gz in the current working directory as input and writes
-BAM and bigWig files as output to the user-assigned output-dir.
+Takes PREFIX.fastq.gz (SE),  PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz (PE) or *.fastq.gz
+in the current working directory as input and writes BAM and bigWig files
+as output to the user-assigned output-dir.
 
 Requirements in current working directory:
 cutadapt 1.8.3, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, bedGraphToBigWig
 
-bash proseq.bsh [options]
+bash proseq2.0.bsh [options]
 
 options:
 
@@ -69,9 +70,9 @@ Optional operations:
 
 --UMI1=0            The length of UMI barcode on the 5' of R1 read. [default: 0]
 --UMI2=0            The length of UMI barcode on the 5' of R2 read. [default: 0]
---add_barcode1=0    The length of additional barcode that will be trimmed
+--ADD_B1=0    The length of additional barcode that will be trimmed
                     on the 5' of R1 read. [default: 0]
---add_barcode2=0    The length of additional barcode that will be trimmed
+--ADD_B2=0    The length of additional barcode that will be trimmed
                     on the 5' of R2 read. [default: 0]
 --thread=1          Number of threads can be used [default: 1]
 ```
