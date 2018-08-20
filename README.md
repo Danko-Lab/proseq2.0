@@ -16,7 +16,7 @@ The pipelines depend on several common bioinformatics tools:
 Please make sure you can call the bioinformatics tools from your current working directory.    
 
 
-
+## Usage
 ```
 Preprocesses and aligns PRO-seq data.
 
