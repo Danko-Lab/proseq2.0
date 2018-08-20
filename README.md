@@ -1,6 +1,7 @@
 # proseq_2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing
-"""
+
+```
 Preprocesses and aligns PRO-seq data.
 
 Takes *.fastq.gz in the current working directory as input and writes
@@ -57,4 +58,4 @@ Optional operations:
 --add_barcode2=0    The length of additional barcode that will be trimmed
                     on the 5' of R2 read. [default: 0]
 --thread=1          Number of threads can be used [default: 1]
-"""
+```
