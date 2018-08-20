@@ -249,6 +249,15 @@ fi
 ## INPUT & Parameters
 # PE
 if [[ "$SEQ" == "PE" ]] ; then 
+  if [ -z "$SE_OUTPUT" ]; then 
+    :
+  else
+    echo "-G and -P can only be used with -SE."
+    echo " use bash proseq2.0.bsh --help."
+    exit 1
+  fi
+
+
   if [[ "$FQ_INPUT" == "*.fastq.gz" ]]; then
     FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
   fi
@@ -330,6 +339,12 @@ fi
 if [ -z "$TMPDIR" ]; then
         TMPDIR="./"
 fi
+if [ ! -d $TMPDIR ]; then
+  mkdir $TMPDIR
+fi
+# bash generate random 32 character alphanumeric string (upper and lowercase).
+TMPDIR=$TMPDIR/$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+
 if [ -z "$thread" ]; then
    thread=1
 fi
@@ -401,10 +416,6 @@ for tool in cutadapt prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig
 do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
 done
 
-
-
-# bash generate random 32 character alphanumeric string (upper and lowercase).
-TMPDIR=$TMPDIR/$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
 ## Print out
 echo " " 
