@@ -13,7 +13,7 @@ while test $# -gt 0; do
     echo "Requirements in current working directory:"
     echo "cutadapt 1.8.3, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, bedGraphToBigWig"
     echo ""
-    echo "bash proseq_2.0.bsh [options]"
+    echo "bash proseq2.0.bsh [options]"
     echo ""
     echo "options:"
     echo ""
@@ -232,17 +232,17 @@ done
 ## CHECK ARGUMENTS.
 if [ -z "$BWAIDX" ]; then
 	echo "--bwa-index is required."
-	echo " use bash proseq_2.0.bsh --help."
+	echo " use bash proseq2.0.bsh --help."
 	exit 1
 fi
 if [ -z "$CHINFO" ]; then
         echo "--chrom-info is required."
-        echo " use bash proseq_2.0.bsh --help."
+        echo " use bash proseq2.0.bsh --help."
         exit 1
 fi
 if [ -z "$SEQ" ]; then
   echo "Please specify the input data is SE or PE."
-  echo " use bash proseq_2.0.bsh --help."
+  echo " use bash proseq2.0.bsh --help."
   exit 1
 fi
 
@@ -302,7 +302,7 @@ elif [[ "$SEQ" == "SE" ]] ; then
   fi
 else
   echo "Please specify the input data is SE or PE."
-  echo " use bash proseq_2.0.bsh --help."
+  echo " use bash proseq2.0.bsh --help."
   exit 1
 fi
 
@@ -367,7 +367,7 @@ if [[ "$SEQ" == "PE" ]]; then
           :
   else
           echo "--RNA5 and --RNA3 value can only be R1_5prime or R2_5prime."
-          echo " use bash proseq_2.0.bsh --help."
+          echo " use bash proseq2.0.bsh --help."
           exit 1
   fi
 fi
@@ -392,7 +392,7 @@ elif [ "${MAP5}" == "FALSE" ] ; then
         :
 else
         echo "--map5 value can only be TRUE or FALSE."
-        echo " use bash proseq_2.0.bsh --help."
+        echo " use bash proseq2.0.bsh --help."
         exit 1
 fi
 
