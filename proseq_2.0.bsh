@@ -1,0 +1,751 @@
+#!/usr/bin/bash
+#
+while test $# -gt 0; do
+        case "$1" in
+                -h|--help)
+    echo ""
+    echo "Preprocesses and aligns PRO-seq data."
+    echo ""
+    echo "Takes *.fastq.gz in the current working directory as input and writes"
+    echo "BAM and bigWig files as output to the user-assigned output-dir."
+    echo ""
+    echo "Requirements in current working directory:"
+    echo "cutadapt 1.8.3, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, bedGraphToBigWig"
+    echo ""
+    echo "bash proseq.bsh [options]"
+    echo ""
+    echo "options:"
+    echo ""
+    echo "To get help:"
+    echo "-h, --help             Show this brief help menu."
+    echo ""
+    echo "Required options:"
+    echo "-SE, --SEQ=SE          Single-end sequencing"
+    echo "-PE, --SEQ=PE          Paired-end sequencing"
+    echo "-i, --bwa-index=PATH   Path to the BWA index of the target genome (i.e., bwa index)."
+    echo "-c, --chrom-info=PATH  Location of the chromInfo table."
+    echo ""
+    echo "I/O options:"
+    echo "-I, --fastq=PREFIX     Prefix for input files."
+    echo "                       Paired-end files require identical prefix and end with _R1.fastq.gz and _R2.fastq.gz"
+    echo "                       eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz"
+    echo "-T, --tmp=PATH         Path to a temporary storage directory."
+    echo "-O, --output-dir=DIR   Specify a directory to store output in."
+    echo ""
+    echo "Required options for SE"
+    echo "-G, --SE_READ=RNA_5prime Single-end sequencing from 5' end of nascent RNA, like GRO-seq"
+    echo "-P, --SE_READ=RNA_3prime Single-end sequencing from 3' end of nascent RNA, like PRO-seq"
+    echo ""
+    echo "Options for PE"
+    echo "--RNA5=R1_5prime    Specify the location of the 5' end of RNA [default: R1_5prime]"
+    echo "--RNA3=R2_5prime    Specify the location of the 3' end of RNA [default: R2_5prime]"
+    echo "                    Available options: R1_5prime: the 5' end of R1 reads"
+    echo "                                       R2_5prime: the 5' end of R2 reads"
+    echo "-5, --map5=TRUE     Report the 5' end of RNA [default on, --map5=TRUE]"
+    echo "-3, --map5=FALSE    Report the 3' end of RNA, only available for PE [default off, --map5=TRUE]"
+    echo "-s, --opposite-strand=TRUE"
+    echo "                    Enable this option if the RNA are at the different strand"
+    echo "                    as the reads set at RNA5 [default: disable]"
+    echo ""
+    echo "Optional operations:"
+    echo "--ADAPT1=GATCGTCGGACTGTAGAACTCTGAACG"
+    echo "                    3' adapter to be removed from the 3' end of R2."
+    echo "--ADAPT2=AGATCGGAAGAGCACACGTCTGAACTC"
+    echo "                    3' adapter to be removed from the 3' end of R1."
+    echo ""
+    echo "--UMI1=0            The length of UMI barcode on the 5' of R1 read. [default: 0]"
+    echo "--UMI2=0            The length of UMI barcode on the 5' of R2 read. [default: 0]"
+    echo "--add_barcode1=0    The length of additional barcode that will be trimmed"
+    echo "                    on the 5' of R1 read. [default: 0]"
+    echo "--add_barcode2=0    The length of additional barcode that will be trimmed"
+    echo "                    on the 5' of R2 read. [default: 0]"
+    echo "--thread=1          Number of threads can be used [default: 1]"
+
+
+
+                        exit 0
+                        ;;
+                -SE)
+                        export SEQ="SE"
+                        shift
+                        ;;
+                -PE)
+                        export SEQ="PE"
+                        shift
+                        ;;
+                -i)
+                        shift
+                        if test $# -gt 0; then
+                                export BWAIDX=$1
+                        else
+                                echo "no BWA index specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --bwa-index*)
+                        export BWAIDX=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -c)
+                        shift
+                        if test $# -gt 0; then
+                                export CHINFO=$1
+                        else
+                                echo "no chromInfo specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --chrom-info*)
+                        export CHINFO=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -I)
+                        shift
+                        if test $# -gt 0; then
+                                export FQ_INPUT=$1
+                        else
+                                echo "no input prefix specified."
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --fastq*)
+                        export FQ_INPUT=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -T)
+                        shift
+                        if test $# -gt 0; then
+                                export TMPDIR=$1
+                        else
+                                echo "no temp folder specified."
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --tmp*)
+                        export TMPDIR=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -O)
+                        shift
+                        if test $# -gt 0; then
+                                export OUTPUT=$1
+                        else
+                                echo "no output dir specified."
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --output-dir*)
+                        export OUTPUT=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --thread*)
+                        export thread=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --RNA5*) # report location of the 5 prime end of RNA
+                         # acce
+                        export RNA5=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --RNA3*) # report location of the 5 prime end of RNA
+                         # acce
+                        export RNA3=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -5)
+                        export MAP5="TRUE"
+                        shift
+                        ;;
+                --map5*)
+                        export MAP5=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -3)
+                        export MAP5="FALSE"
+                        shift
+                        ;;
+                -s)
+                        export OPP="TRUE"
+                        shift
+                        ;;
+                --opposite-strand*)
+                        export OPP=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --ADAPT2*)
+                        export ADAPT2=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --ADAPT1*)
+                        export ADAPT1=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --UMI1*)
+                        export UMI1=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --UMI2*)
+                        export UMI2=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --add_barcode1*)
+                        export add_barcode1=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;                
+                --add_barcode2*)
+                        export add_barcode2=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -G)
+                        export SE_OUTPUT="G"
+                        export RNA5="R1_5prime"
+                        export OPP="FALSE"
+                        #export MAP5="TRUE"
+                        export SE_READ="RNA_5prime"
+                        shift
+                        ;;
+                -P)
+                        export SE_OUTPUT="P"
+                        export RNA3="R1_5prime"
+                        export OPP="TRUE"
+                        #export MAP5="TRUE"
+                        export SE_READ="RNA_3prime"
+                        shift
+                        ;;
+                --SE_READ*)
+                        export SE_READ=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                *)
+                        break
+                        ;;
+        esac
+done
+
+
+## CHECK ARGUMENTS.
+if [ -z "$BWAIDX" ]; then
+	echo "--bwa-index is required."
+	echo " use bash proseq_PE.bsh --help."
+	exit 1
+fi
+if [ -z "$CHINFO" ]; then
+        echo "--chrom-info is required."
+        echo " use bash proseq_PE.bsh --help."
+        exit 1
+fi
+if [ -z "$SEQ" ]; then
+  echo "Please specify the input data is SE or PE."
+  echo " use bash proseq_PE.bsh --help."
+  exit 1
+fi
+
+## INPUT & Parameters
+# PE
+if [[ "$SEQ" == "PE" ]] ; then 
+  if [[ "$FQ_INPUT" == "*.fastq.gz" ]]; then
+    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
+  fi
+  if [ -z "$FQ_INPUT" ]; then
+    echo "No input files specified.  Using *.fastq.gz"
+    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
+  fi
+
+  ## Check if input file end with _R1.fastq.gz or _R2.fastq.gz
+  tmp=${FQ_INPUT}
+  FQ_INPUT=() #array
+  for name in ${tmp}
+  do 
+    if [ ! -f ${name}_R1.fastq.gz ]; then
+      echo ""
+      echo "##################################################################################"
+      echo " File ${name}_R1.fastq.gz was not found! Skip ${name}*.fastq.gz from analysis."
+      echo " Paired-end files require identical prefix and end with _R1.fastq.gz and _R2.fastq.gz"
+      echo " eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz"
+      echo " Please make sure you have the correct file suffix!                           " 
+      echo "##################################################################################"
+      echo ""
+    else
+    FQ_INPUT+=(${name}) # append to the array
+    echo ${FQ_INPUT} 
+    fi
+  done
+
+# SE
+elif [[ "$SEQ" == "SE" ]] ; then
+  if [[ "$SE_READ" == "RNA_5prime" ]] ; then
+    SE_OUTPUT="G"
+    RNA5="R1_5prime"
+    OPP="FALSE"
+    #MAP5="TRUE"
+  elif [[ "$SE_READ" == "RNA_3prime" ]] ; then
+    SE_OUTPUT="P"
+    RNA3="R1_5prime"
+    OPP="FALSE"
+    #MAP5="TRUE"
+  fi
+  if [ -z "$SE_OUTPUT" ] ; then
+  echo "Please specify output format for SE [-G or -P]"
+  exit 1
+  fi
+  if [[ "$FQ_INPUT" == "*.fastq.gz" ]]; then
+    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
+  elif [ -z "$FQ_INPUT" ]; then
+    echo "No input files specified.  Using *.fastq.gz"
+    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
+  fi
+else
+  echo "Please specify the input data is SE or PE."
+  echo " use bash proseq_PE.bsh --help."
+  exit 1
+fi
+
+
+# Check input file number
+if [[ ${#FQ_INPUT[@]} == 0 ]]; then  # if the length of array is 0
+  echo "##################################################################################"
+  echo " No files is in the correct format."
+  echo " Paired-end files require identical prefix and end with _R1.fastq.gz and _R2.fastq.gz"
+  echo " eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz"
+  echo " Please make sure you have the correct file suffix! Aborting."
+  echo "##################################################################################"
+  exit 1
+fi
+
+if [ -z "$OUTPUT" ]; then
+  now=$(date +"%m_%d_%Y")
+  OUTPUT=./My_proseq_output_dir-${now}
+  echo No output path specified.  Using ${OUTPUT}
+fi
+
+if [ ! -d $OUTPUT ]; then
+  mkdir $OUTPUT
+fi
+if [ -z "$TMPDIR" ]; then
+        TMPDIR="./"
+fi
+if [ -z "$thread" ]; then
+   thread=1
+fi
+if [ -z "$ADAPT2" ]; then
+        ADAPT2="AGATCGGAAGAGCACACGTCTGAACTC"
+fi
+if [ -z "$ADAPT1" ]; then
+        ADAPT1="GATCGTCGGACTGTAGAACTCTGAACG"
+fi
+if [ -z "$UMI1" ]; then
+   UMI1=0
+fi
+if [ -z "$UMI2" ]; then
+   UMI2=0
+fi
+if [ -z "$add_barcode1" ]; then
+   add_barcode1=0
+fi
+if [ -z "$add_barcode2" ]; then
+   add_barcode2=0
+fi
+
+
+if [[ "$SEQ" == "PE" ]]; then
+  if [[ -z "$RNA5" && -z "$RNA3" ]]; then
+    RNA5="R1_5prime"
+  fi
+  if [[ "$RNA3" == "R1_5prime" ]]; then
+   RNA5="R2_5prime"
+  elif [[ "$RNA3" == "R2_5prime" ]]; then
+    RNA5="R1_5prime"
+  fi
+  
+  if [[ "$RNA5" == "R1_5prime" || "$RNA5" == "R2_5prime" ]] ; then 
+          :
+  else
+          echo "--RNA5 and --RNA3 value can only be R1_5prime or R2_5prime."
+          echo " use bash proseq_PE.bsh --help."
+          exit 1
+  fi
+fi
+
+if [ -z "$OPP" ]; then
+   OPP="FALSE"
+fi
+if [ -z "$MAP5" ]; then
+        MAP5="TRUE"
+fi
+
+
+if [[ "${MAP5}" == "FALSE" && "$SEQ" == "SE" ]] ; then 
+  echo "For single-end (SE), can only report the 5 prime end of reads (--map5=TRUE)"
+  exit 1
+fi
+
+
+if [ "${MAP5}" == "TRUE" ] ; then 
+        :
+elif [ "${MAP5}" == "FALSE" ] ; then
+        :
+else
+        echo "--map5 value can only be TRUE or FALSE."
+        echo " use bash proseq_PE.bsh --help."
+        exit 1
+fi
+
+## Check all the bioinformatics tools can be called from current working directory.
+for tool in cutadapt prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig
+do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
+done
+
+
+
+# bash generate random 32 character alphanumeric string (upper and lowercase).
+TMPDIR=$TMPDIR/$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+
+## Print out
+echo " " 
+echo "Processing PRO-seq data ..." 
+echo " "
+echo "SEQ                       $SEQ"
+
+if [[ "$SEQ" == "SE" ]]; then
+echo "SE_OUTPUT                 $SE_OUTPUT"
+echo "SE_READ                   $SE_READ"
+fi
+
+if [[ "$SEQ" == "PE" ]]; then
+echo "Location of 5' of RNA     $RNA5"
+echo "Location of 3' of RNA     $RNA3"
+fi
+
+echo "Report 5' ends            $MAP5"
+echo "Report opposite strand    $OPP"
+
+echo ""
+echo "Input files/ paths:"
+echo "bwa index                 $BWAIDX"
+echo "chromInfo                 $CHINFO"
+i=1
+for name in ${FQ_INPUT[@]}
+  do echo "input prefix $i            $name"
+  let "i++"
+done
+echo "temp folder               $TMPDIR"
+echo "output-dir                $OUTPUT"
+echo " "
+echo "Optional operations:"
+echo "ADAPT2                    $ADAPT2"
+echo "ADAPT1                    $ADAPT1"
+echo "UMI1 barcode length       $UMI1"
+echo "UMI2 barcode length       $UMI2"
+echo "add_barcode1 length       $add_barcode1"
+echo "add_barcode2 length       $add_barcode2"
+echo "number of threads         $thread"
+
+
+
+## Exits .. for debugging.
+#exit 1
+
+## DOIT!
+mkdir ${TMPDIR}
+
+if [[ "$SEQ" == "PE" ]] ; then 
+#############################################
+## Preprocess data.  Remove adapters.  Trim.
+echo " "
+echo "Preprocessing fastq files:"
+mkdir ${TMPDIR}/noadapt
+mkdir ${TMPDIR}/nodups
+
+for name in ${FQ_INPUT[@]}
+ do
+  ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
+  # Remove adapter
+  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${name}_R1.fastq.gz &
+  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${name}_R2.fastq.gz &
+  wait
+
+  # Read1
+  # remove UMI2 and add_barcode2 from the 3 prime end of R1
+   n2=$[UMI2+add_barcode2]
+   cutadapt --cut -${n2} --minimum-length 15 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20 &
+   cutadapt --minimum-length 15 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 &
+   wait
+   cat ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq &
+
+  # Read2
+  # remove UMI1 and add_barcode1 from the 3 prime end of R2
+   n1=$[UMI1+add_barcode1]
+   cutadapt --cut -${n1} --minimum-length 15 ${TMPDIR}/${name}_trim_R2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq -q 20 &
+   cutadapt --minimum-length 15 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20 &
+   wait
+   cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
+
+  wait
+
+  ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
+  if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+   # Remove PCR duplciates.
+   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -fastq2 ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   # trim the UMI and additional barcode after dereplicate
+   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/nodups/${name}_dedup_withBarcode_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${n2} -fastq ${TMPDIR}/nodups/${name}_dedup_withBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   # min_len 15
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1.fastq -fastq2 ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+  else
+   # trim the UMI and additional barcode WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
+   prinseq-lite.pl -trim_left ${add_barcode1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${add_barcode2} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   # min_len 15
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1.fastq -fastq2 ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+  fi
+
+
+  rm ${TMPDIR}/${name}_trim_R1.fastq ${TMPDIR}/${name}_untrim_R1.fastq ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq
+  rm ${TMPDIR}/${name}_trim_R2.fastq ${TMPDIR}/${name}_untrim_R2.fastq ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq
+
+ done
+
+wait
+## Cleanup.
+rm -r ${TMPDIR}/noadapt 
+gzip ${TMPDIR}/nodups/*.fastq 
+
+
+#############################################
+## Align reads.
+echo " "
+echo "Mapping reads:"
+
+QC_INPUT=`ls  ${TMPDIR}/nodups/*_dedup_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
+
+if [[ ${#QC_INPUT} == 0 ]]; then
+  echo "#########################################"
+  echo " Something went wrong with Preprocess."
+  echo " No fastq.gz files passed."
+  echo " Aborting."
+  echo "#########################################"
+  exit 1
+fi
+
+for name in ${QC_INPUT}
+ do
+  ## Align using BWA.
+  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/nodups/${name}_1.fastq.gz ${TMPDIR}/nodups/${name}_2.fastq.gz | \
+	samtools view -bf 0x2 -q 10 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+		
+  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
+ done
+
+## Cleanup
+#find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
+
+#############################################
+## Write out the bigWigs.
+echo " "
+echo "Writing bigWigs:"
+for f in ${TMPDIR}/*.sort.bam
+ do
+   j=`echo $f | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- |rev `
+   echo $j > ${OUTPUT}/${j}.align.log
+   if [ "${RNA5}" == "R1_5prime" ] ; then
+     if [ "${OPP}" == "FALSE" ] ; then
+       if [ "${MAP5}" == "TRUE" ] ; then  ## report The 5' end of the RNA. Danko lab leChRO-Seq protocol is on the 5' of _R1 readl, same strand of R1 ($9) 
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/kill.warnings | awk 'BEGIN{OFS="\t"} ($9 == "+") {print $1,$2,$2+1,$7,$8,$9}; ($9 == "-") {print $1,$3-1,$3,$7,$8,$9}' | gzip > ${TMPDIR}/$j.bed.gz
+       else ## report The 3' end of the RNA.  Danko lab leChRO-Seq protocol is on the 5 prime of _R2 read, opposite strand of R2 (R2 strand $10, R1 strand $9)
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/kill.warnings | awk 'BEGIN{OFS="\t"} ($10 == "-") {print $1,$6-1,$6,$7,$8,$9}; ($10 == "+") {print $1,$5,$5+1,$7,$8,$9}' | gzip > ${TMPDIR}/$j.bed.gz
+       fi
+     elif [ "${OPP}" == "TRUE" ] ; then
+       if [ "${MAP5}" == "TRUE" ] ; then  ## report The 5' end of the RNA. 
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/kill.warnings | awk 'BEGIN{OFS="\t"} ($9 == "+") {print $1,$2,$2+1,$7,$8,$10}; ($9 == "-") {print $1,$3-1,$3,$7,$8,$10}' | gzip > ${TMPDIR}/$j.bed.gz
+       else ## report The 3' end of the RNA.
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/kill.warnings | awk 'BEGIN{OFS="\t"} ($10 == "-") {print $1,$6-1,$6,$7,$8,$10}; ($10 == "+") {print $1,$5,$5+1,$7,$8,$10}' | gzip > ${TMPDIR}/$j.bed.gz
+       fi
+     fi
+   elif [ "${RNA5}" == "R2_5prime" ] ; then
+     if [ "${OPP}" == "FALSE" ] ; then
+       if [ "${MAP5}" == "TRUE" ] ; then #report the 5 prime end of RNA, in Engreitz data is 5 prime end of R2, same strand
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/${j}.kill.warnings | awk 'BEGIN{OFS="\t"} ($10 == "+") {print $1,$5,$5+1,$7,$8,$10}; ($10 == "-") {print $1,$6-1,$6,$7,$8,$10}'|gzip > ${TMPDIR}/${j}.bed.gz      
+       else  ## report the 3-prime end of the RNA, in Engreitz data is the 5' end of R1 read, but opposite strand
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/${j}.kill.warnings | awk 'BEGIN{OFS="\t"} ($9 == "+") {print $1,$2,$2+1,$7,$8,$10}; ($9 == "-") {print $1,$3-1,$3,$7,$8,$10}' |gzip  > ${TMPDIR}/${j}.bed.gz
+       fi
+     elif [ "${OPP}" == "TRUE" ] ; then
+       if [ "${MAP5}" == "TRUE" ] ; then #report the 5 prime end of RNA, in Engreitz data is 5 prime end of R2, same strand
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/${j}.kill.warnings | awk 'BEGIN{OFS="\t"} ($10 == "+") {print $1,$5,$5+1,$7,$8,$9}; ($10 == "-") {print $1,$6-1,$6,$7,$8,$9}'|gzip > ${TMPDIR}/${j}.bed.gz      
+       else  ## report the 3-prime end of the RNA, in Engreitz data is the 5' end of R1 read, but opposite strand
+          bedtools bamtobed -bedpe -mate1 -i $f 2> ${TMPDIR}/${j}.kill.warnings | awk 'BEGIN{OFS="\t"} ($9 == "+") {print $1,$2,$2+1,$7,$8,$9}; ($9 == "-") {print $1,$3-1,$3,$7,$8,$9}' |gzip  > ${TMPDIR}/${j}.bed.gz
+       fi
+     fi
+   fi
+
+   echo 'Number of mappable reads:' >> ${OUTPUT}/${j}.align.log
+   echo `zcat ${TMPDIR}/$j.bed.gz | grep "" -c` >> ${OUTPUT}/${j}.align.log
+   
+   ## Remove rRNA and reverse the strand (PRO-seq).
+   zcat ${TMPDIR}/$j.bed.gz | grep "rRNA\|chrM" -v | grep "_" -v | sort-bed - | gzip > ${TMPDIR}/$j.nr.rs.bed.gz
+   echo 'Number of mappable reads (excluding rRNA):' >> ${OUTPUT}/${j}.align.log
+   echo `zcat ${TMPDIR}/$j.nr.rs.bed.gz | grep "" -c` >> ${OUTPUT}/${j}.align.log
+   
+   ## Convert to bedGraph ... Can't gzip these, unfortunately.
+   bedtools genomecov -bg -i ${TMPDIR}/$j.nr.rs.bed.gz -g ${CHINFO} -strand + > ${TMPDIR}/$j\_plus.bedGraph
+   bedtools genomecov -bg -i ${TMPDIR}/$j.nr.rs.bed.gz -g ${CHINFO} -strand - > ${TMPDIR}/$j\_minus.noinv.bedGraph
+   
+   ## Invert minus strand.
+   cat ${TMPDIR}/$j\_minus.noinv.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*$4}' > ${TMPDIR}/$j\_minus.bedGraph ## Invert read counts on the minus strand.
+   
+   ## Then to bigWig
+   bedGraphToBigWig ${TMPDIR}/$j\_plus.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.bw
+   bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw
+
+   #rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
+ done
+
+fi #*/
+
+
+if [[ "$SEQ" == "SE" ]] ; then 
+#############################################
+## Preprocess data.  Remove adapters.  Trim.
+echo " "
+echo "Preprocessing fastq files:"
+mkdir ${TMPDIR}/noadapt
+mkdir ${TMPDIR}/nodups
+
+for name in ${FQ_INPUT[@]}
+ do
+  ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
+  # Remove adapter
+  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${name}.fastq.gz
+  # Read1
+  # remove UMI2 and add_barcode2 from the 3 prime end of R1
+   n2=$[UMI2+add_barcode2]
+   n1=$[UMI1+add_barcode1]
+   cutadapt --cut -${n2} --minimum-length 15 ${TMPDIR}/${name}_trim.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved.fastq -q 20 &
+   cutadapt --minimum-length 15 ${TMPDIR}/${name}_untrim.fastq --output=${TMPDIR}/${name}_q20trim.fastq -q 20 &
+   wait
+   cat ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt.fastq &
+
+  wait
+
+  ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
+  if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+   # Remove PCR duplciates.
+   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   # trim the UMI and additional barcode after dereplicate
+   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/nodups/${name}_dedup_withBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+ 
+   # min_len 15
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+  else
+   # trim the UMI and additional barcode WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
+   prinseq-lite.pl -trim_left ${add_barcode1} -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   # min_len 15
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+  fi
+
+
+  rm ${TMPDIR}/${name}_trim.fastq ${TMPDIR}/${name}_untrim.fastq ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq
+
+
+ done
+
+wait
+## Cleanup.
+#rm -r ${TMPDIR}/noadapt 
+gzip ${TMPDIR}/nodups/*.fastq 
+
+
+#############################################
+## Align reads.
+echo " "
+echo "Mapping reads:"
+
+QC_INPUT=`ls  ${TMPDIR}/nodups/*_dedup_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
+
+if [[ ${#QC_INPUT} == 0 ]]; then
+  echo "#########################################"
+  echo " Something went wrong with Preprocess."
+  echo " No fastq.gz files passed."
+  echo " Aborting."
+  echo "#########################################"
+  exit 1
+fi
+
+for name in ${QC_INPUT}
+ do
+  ## Align using BWA.
+  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/nodups/${name}_end.fastq.gz | \
+  samtools view -b -q 10 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+done
+
+wait
+
+  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
+
+
+
+## Cleanup
+#find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
+
+
+#############################################
+## Write out the bigWigs.
+echo " "
+echo "Writing bigWigs:"
+for f in ${TMPDIR}/*.sort.bam
+ do
+#*/
+   j=`echo $f | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- |rev `
+   echo $j > ${OUTPUT}/${j}.align.log
+
+# in SE, MAP5 alwasys TRUE
+
+
+   #if [[ "${RNA5}" == "R1_5prime" && "${OPP}" == "FALSE" ]] ; then ## report The 5 prime end of the RNA.   #like GRO-seq
+   if [[ "$SE_OUTPUT" == "G" ]] ; then
+      bedtools bamtobed -i $f 2> ${TMPDIR}/kill.warnings| awk 'BEGIN{OFS="\t"} ($5 > 0){print $0}' | \
+      awk 'BEGIN{OFS="\t"} ($6 == "+") {print $1,$2,$2+1,$4,$5,$6}; ($6 == "-") {print $1,$3-1,$3,$4,$5,$6}' | gzip > ${TMPDIR}/$j.bed.gz
+   #elif [[ "${RNA3}" == "R1_5prime" && "${OPP}" == "TRUE" ]] ; then  #like PRO-seq
+    elif [[ "$SE_OUTPUT" == "P" ]] ; then
+      bedtools bamtobed -i $f 2> ${TMPDIR}/kill.warnings| awk 'BEGIN{OFS="\t"} ($5 > 0){print $0}' | \
+      awk 'BEGIN{OFS="\t"} ($6 == "+") {print $1,$2,$2+1,$4,$5,"-"}; ($6 == "-") {print $1,$3-1,$3,$4,$5,"+"}' | gzip > ${TMPDIR}/$j.bed.gz
+   fi
+
+
+   echo 'Number of mappable reads:' >> ${OUTPUT}/${j}.align.log
+   echo `zcat ${TMPDIR}/$j.bed.gz | grep "" -c` >> ${OUTPUT}/${j}.align.log
+   
+   ## Remove rRNA and reverse the strand (PRO-seq).
+   zcat ${TMPDIR}/$j.bed.gz | grep "rRNA\|chrM" -v | grep "_" -v | sort-bed - | gzip > ${TMPDIR}/$j.nr.rs.bed.gz
+   echo 'Number of mappable reads (excluding rRNA):' >> ${OUTPUT}/${j}.align.log
+   echo `zcat ${TMPDIR}/$j.nr.rs.bed.gz | grep "" -c` >> ${OUTPUT}/${j}.align.log
+   
+   ## Convert to bedGraph ... Can't gzip these, unfortunately.
+   bedtools genomecov -bg -i ${TMPDIR}/$j.nr.rs.bed.gz -g ${CHINFO} -strand + > ${TMPDIR}/$j\_plus.bedGraph
+   bedtools genomecov -bg -i ${TMPDIR}/$j.nr.rs.bed.gz -g ${CHINFO} -strand - > ${TMPDIR}/$j\_minus.noinv.bedGraph
+   
+   ## Invert minus strand.
+   cat ${TMPDIR}/$j\_minus.noinv.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*$4}' > ${TMPDIR}/$j\_minus.bedGraph ## Invert read counts on the minus strand.
+   
+   ## Then to bigWig
+   bedGraphToBigWig ${TMPDIR}/$j\_plus.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.bw
+   bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw
+
+   #rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
+ done
+
+
+
+fi
+
+
+
+
+#############################################
+## CLEANUP!
+#rm -Rf ${TMPDIR}
+
