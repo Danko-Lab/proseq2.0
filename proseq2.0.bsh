@@ -579,7 +579,7 @@ for name in ${QC_INPUT}
  do
   ## Align using BWA.
   bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/nodups/${name}_1.fastq.gz ${TMPDIR}/nodups/${name}_2.fastq.gz | \
-	samtools view -bf 0x2 -q 10 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+	samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
 		
   cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
  done
@@ -722,7 +722,7 @@ for name in ${QC_INPUT}
  do
   ## Align using BWA.
   bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/nodups/${name}_end.fastq.gz | \
-  samtools view -b -q 10 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+  samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
 done
 
 wait
