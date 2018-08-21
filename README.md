@@ -85,3 +85,4 @@ Optional operations:
                     on the 5' of R2 read. [default: 0]
 --thread=1          Number of threads can be used [default: 1]
 ```
+<img src="images/lib.png">
