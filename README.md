@@ -1,7 +1,7 @@
 # proseq2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing
 
-## Overview of proseq2.0
+## Overview
 Our pro-seq2.0 pipeline will take single-end or pair-ended sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including 
     + pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
     + mapping reads to a reference genome (BWA)
