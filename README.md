@@ -7,7 +7,7 @@ Our pro-seq2.0 pipeline will take single-end or paired-end sequencing reads in f
 + mapping reads to a reference genome (BWA)
 + converting BAM files into bedGraph and BigWig formats (kentsource). When converting to bedGraph and BigWig, the pipeline only report the 5’ end position of the reads after UMI/adapter removal. For pair-end sequencing, user can choose to report the 5’ end of R1 or R2 reads.
 
-To run our pipeline users must first download the pipeline files and install dependencies indicated in the README.md. In addition, user need to provide a path to a BWA index file and the path to the chromInfo file for the genome of choice. After running this pipeline, users should have processed data files in the specified output directory.
+To run our pipeline users must first download the pipeline files and install dependencies indicated in this README.md. In addition, user need to provide a path to a BWA index file and the path to the chromInfo file for the genome of choice. After running this pipeline, users should have processed data files in the specified output directory.
 
 
 ## Dependencies: 
