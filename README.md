@@ -121,3 +121,8 @@ test_R1.fastq.gz and test_R2.fastq.gz were Paired-End sequenced as in chromatin 
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp3 -O myOutput3
 ```
+### Example 4
+Same as in Example 3 but with UMI barcode 4bp on the 5’ end and 2bp on the 3’ end of inserts. 
+```
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp4 -O myOutput4 --UMI1=4 --UMI2=2
+```
