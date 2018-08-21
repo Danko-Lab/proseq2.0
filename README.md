@@ -1,6 +1,14 @@
 # proseq2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing
 
+## Overview
+Our pro-seq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
++ pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
++ mapping reads to a reference genome (BWA)
++ converting BAM files into bedGraph and BigWig formats (kentsource). When converting to bedGraph and BigWig, the pipeline only report the 5’ end position of the reads after UMI/adapter removal. For pair-end sequencing, user can choose to report the 5’ end of R1 or R2 reads.
+
+To run our pipeline users must first download the pipeline files and install dependencies indicated in this README.md. In addition, user need to provide a path to a BWA index file and the path to the chromInfo file for the genome of choice. After running this pipeline, users should have processed data files in the specified output directory.
+
 
 ## Dependencies: 
 
@@ -86,3 +94,35 @@ Optional operations:
 --thread=1          Number of threads can be used [default: 1]
 ```
 <img src="images/lib.png">
+
+
+## Examples
+The pipeline requires two parameters for genome information, including BWA index (--bwa-index) and chromosome size (--chrom-info). 
+```
+export bwaIndex=PathToBWAIndex (generated using the 'bwa index' command)
+export chromInfo=PathToChromInfo (see /input_file_exmaples/mm10.chromInfo for example)
+```
+
+### Example 1
+
+test_SE.fastq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941 
+```
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -G -I test_SE -T myTmp1 -O myOutput1
+```
+### Example 2
+
+test_SE.fastq.gz were made according to PRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/23430654
+```
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -I test_SE -T myTmp2 -O myOutput2
+```
+### Example 3
+
+test_R1.fastq.gz and test_R2.fastq.gz were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
+```
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp3 -O myOutput3
+```
+### Example 4
+Same as in Example 3 but with UMI barcode 4bp on the 5’ end and 2bp on the 3’ end of inserts. 
+```
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp4 -O myOutput4 --UMI1=4 --UMI2=2
+```
