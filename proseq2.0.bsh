@@ -321,6 +321,8 @@ elif [[ "$SEQ" == "SE" ]] ; then
   elif [ -z "$FQ_INPUT" ]; then
     echo "No input files specified.  Using *.fastq.gz"
     FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
+  elif [[ "$FQ_INPUT" == *.fastq.gz ]]; then
+    FQ_INPUT=`echo $FQ_INPUT | rev | cut -d \. -f 3-| rev`
   fi
 else
   echo "Please specify the input data is SE or PE."
@@ -457,11 +459,22 @@ echo ""
 echo "Input files/ paths:"
 echo "bwa index                 $BWAIDX"
 echo "chromInfo                 $CHINFO"
+if [[ "$SEQ" == "SE" ]]; then
 i=1
 for name in ${FQ_INPUT[@]}
-  do echo "input prefix $i            $name"
+  do 
+echo "input file $i              ${name}.fastq.gz"
   let "i++"
 done
+fi
+if [[ "$SEQ" == "PE" ]]; then
+i=1
+for name in ${FQ_INPUT[@]}
+  do 
+echo "input file pair $i         ${name}_R1.fastq.gz, ${name}_R2.fastq.gz"
+  let "i++"
+done
+fi
 echo "temp folder               $TMPDIR"
 echo "output-dir                $OUTPUT"
 echo " "
@@ -478,7 +491,7 @@ echo "number of threads         $thread"
 
 
 ## Exits .. for debugging.
-#exit 1
+exit 1
 
 ## DOIT!
 mkdir ${TMPDIR}
