@@ -132,6 +132,12 @@ Same as in Example 3 but with UMI barcode 4bp on the 5â€™ end and 2bp on the 3â€
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp4 -O myOutput4 --UMI1=4 --UMI2=2
 ```
 
+## Useful references
+
+* GRO-seq: http://www.sciencemag.org/content/322/5909/1845.long
+* PRO-seq: http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3974810/
+* dREG: http://www.nature.com/nmeth/journal/v12/n5/full/nmeth.3329.html
+
 ## Notes for **CBSUdanko** users:
 ``` 
 (1) BWA index for hg19: 
