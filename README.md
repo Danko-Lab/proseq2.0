@@ -131,3 +131,19 @@ Same as in Example 3 but with UMI barcode 4bp on the 5â€™ end and 2bp on the 3â€
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp4 -O myOutput4 --UMI1=4 --UMI2=2
 ```
+
+## Useful references
+
+* GRO-seq: http://www.sciencemag.org/content/322/5909/1845.long
+* PRO-seq: http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3974810/
+* dREG: http://www.nature.com/nmeth/journal/v12/n5/full/nmeth.3329.html
+
+## Notes for **CBSUdanko** users:
+``` 
+(1) BWA index for hg19: 
+    CBSUdanko:/storage/data/short_read_index/hg19/bwa.rRNA-0.7.5a-r405/hg19.rRNA.bwt
+(2) Chromosome table for hg19:
+    CBSUdanko:/storage/data/hg19/hg19.chromInfo
+(3) Add UCSC tools and prinseq-lite.pl to your path (.bashrc file)
+    export PATH=$PATH:/home/lac334/ucsc_tools:/programs
+``` 
