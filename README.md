@@ -157,5 +157,4 @@ export dog_genome=/local/storage/data/short_read_index/canFam3/bwa.rRNA-0.7.8-r4
 export dog_chinfo=/local/storage/data/canFam3/canFam3.chromInfo
 ``` 
 
-3. 
-Using --UIM1=6 to replace -b6 in the old script(proseqMapper.bsh) if you have experiences in old version.
+3. Using --UMI1=6 to replace -b6 if you have used it in the old version (proseqMapper.bsh).
