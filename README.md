@@ -1,5 +1,5 @@
 # proseq2.0
-Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing
+Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing. It a new version of ProseqMapper (https://github.com/Danko-Lab/utils/tree/master/proseq).
 
 ## Overview
 Our pro-seq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
