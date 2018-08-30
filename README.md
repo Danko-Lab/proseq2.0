@@ -147,13 +147,13 @@ export PATH=$PATH:/programs/prinseq-lite-0.20.2:/home/zw355/lib/ucsc:/programs
 
 2. Find the BWA index and chromosome table in the server:
 ``` 
-export human_genome=/local/storage/data/short_read_index/hg19/bwa.rRNA-0.7.5a-r405/hg19.rRNA.bwt
+export human_genome=/local/storage/data/short_read_index/hg19/bwa.rRNA-0.7.5a-r405/hg19.rRNA
 export human_chinfo=/local/storage/data/hg19/hg19.chromInfo
 
-export mouse_genome=/local/storage/data/short_read_index/mm10/bwa.rRNA-0.7.8-r455/mm10.rRNA.fa.gz.bwt
+export mouse_genome=/local/storage/data/short_read_index/mm10/bwa.rRNA-0.7.8-r455/mm10.rRNA.fa.gz
 export mouse_chinfo=/local/storage/data/mm10/mm10.chromInfo
 
-export dog_genome=/local/storage/data/short_read_index/canFam3/bwa.rRNA-0.7.8-r455/canFam3.rRNA.fa.bwt
+export dog_genome=/local/storage/data/short_read_index/canFam3/bwa.rRNA-0.7.8-r455/canFam3.rRNA.fa
 export dog_chinfo=/local/storage/data/canFam3/canFam3.chromInfo
 ``` 
 
