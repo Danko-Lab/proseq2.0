@@ -99,12 +99,13 @@ Optional operations:
 ## Examples
 The pipeline requires two parameters for genome information, including BWA index (--bwa-index) and chrom info (--chrom-info). 
 
-__BWA index__ should be generated using the __bwa index__ command according to BWA manual at http://bio-bwa.sourceforge.net/bwa.shtml
+__BWA index__ should be generated using the __bwa index__ command according to BWA manual at http://bio-bwa.sourceforge.net/bwa.shtml . Please note that the program only take in the prefix when you assign the index, no ".bwt" in the end. See the BWA manual for more details.
 
 __Chrom info__ is a tab-delimited file with two columns. The first column is the chromosome name and the second is the size of the chromosome. Please see see /input_file_exmaples/mm10.chromInfo for example
 
 ```
-export bwaIndex=PathToBWAIndex
+bwa index Genome.fa.gz
+export bwaIndex=Genome.fa.gz
 export chromInfo=PathToChromInfo
 ```
 
