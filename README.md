@@ -104,8 +104,8 @@ __BWA index__ should be generated using the __bwa index__ command according to B
 __Chrom info__ is a tab-delimited file with two columns. The first column is the chromosome name and the second is the size of the chromosome. Please see see /input_file_exmaples/mm10.chromInfo for example
 
 ```
-bwa index Genome.fa.gz
-export bwaIndex=Genome.fa.gz
+bwa index Genome.fa.gz                # Don't do this if you already have bwa index
+export bwaIndex=Genome.fa.gz          # Or path to your bwa index
 export chromInfo=PathToChromInfo
 ```
 
