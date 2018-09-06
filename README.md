@@ -2,7 +2,7 @@
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing. It is a new version of ProseqMapper (https://github.com/Danko-Lab/utils/tree/master/proseq).
 
 ## Overview
-Our pro-seq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
+Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
 + pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
 + mapping reads to a reference genome (BWA)
 + converting BAM files into bedGraph and BigWig formats (kentsource). When converting to bedGraph and BigWig, the pipeline only report the 5’ end position of the reads after UMI/adapter removal. For pair-end sequencing, user can choose to report the 5’ end of R1 or R2 reads.
@@ -119,7 +119,7 @@ export chromInfo=PathToChromInfo
 ### Example 1
 
 PREFIX.fastq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941 
-Give UMI11=6, the pipeline will remove PCR duplicates and trim the 6bp UMI barcode.
+Give UMI1=6, the pipeline will remove PCR duplicates and trim the 6bp UMI barcode.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -G -T myOutput1 -O myOutput1 --UMI1=6 -I PREFIX
 ```
