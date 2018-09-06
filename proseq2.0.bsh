@@ -726,7 +726,7 @@ for name in ${FQ_INPUT[@]}
 
 wait
 ## Cleanup.
-#rm -r ${TMPDIR}/noadapt 
+rm -r ${TMPDIR}/noadapt 
 gzip ${TMPDIR}/passQC/*.fastq 
 
 
