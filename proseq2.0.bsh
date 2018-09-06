@@ -697,19 +697,20 @@ for name in ${FQ_INPUT[@]}
    prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
    prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
-   rm ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq
    # min_len 15
-   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq
   else
    # trim the additional barcode WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
-   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # min_len 15
-   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_QC_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/passQC/${name}_BarcodeRemoved.fastq
   fi
 
 
   rm ${TMPDIR}/${name}_trim.fastq ${TMPDIR}/${name}_untrim.fastq ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq
-  rm ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq
+  
 
  done
 
@@ -724,7 +725,7 @@ gzip ${TMPDIR}/passQC/*.fastq
 echo " "
 echo "Mapping reads:"
 
-QC_INPUT=`ls  ${TMPDIR}/passQC/*_dedup_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
+QC_INPUT=`ls  ${TMPDIR}/passQC/*_QC_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
