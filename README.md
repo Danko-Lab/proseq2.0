@@ -119,18 +119,25 @@ export chromInfo=PathToChromInfo
 ### Example 1
 
 test_SE.fastq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941 
+Give UMI11=6, the pipeline will remove PCR duplicates and trim the 6bp UMI barcode.
 ```
-bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -G -I test_SE -T myTmp1 -O myOutput1
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -G -I test_SE -T myTmp1 -O myOutput1 --UMI1=6
 ```
 ### Example 2
 
 test_SE.fastq.gz were made according to PRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/23430654
+UMI1 was set to 0 by default. The pipeline will NOT remove PCR duplicates.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -I test_SE -T myTmp2 -O myOutput2
 ```
 ### Example 3
 
 test_R1.fastq.gz and test_R2.fastq.gz were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
+* Please note that Paired-end files require identical prefix and end with _R1.fastq.gz and _R2.fastq.gz.
+
+  eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz.
+
+  Assign the file use __-I PREFIX__
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -I test -T myTmp3 -O myOutput3
 ```
