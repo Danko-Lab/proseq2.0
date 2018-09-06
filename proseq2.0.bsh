@@ -526,10 +526,13 @@ for name in ${FQ_INPUT[@]}
   echo ${name}_R2.fastq.gz >> ${OUTPUT}/${name}.QC.log
   zcat ${name}_R2.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
 
+  old_name=${name}
+  name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
+
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${name}_R1.fastq.gz &
-  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${name}_R2.fastq.gz &
+  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${old_name}_R1.fastq.gz &
+  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${old_name}_R2.fastq.gz &
   wait
 
   # Read1
@@ -696,9 +699,13 @@ for name in ${FQ_INPUT[@]}
   ## read stats
   echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
   zcat ${name}.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+
+  old_name=${name}
+  name=`echo ${old_name} | rev | cut -d \/ -f 1| rev`
+
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT_SE} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${name}.fastq.gz
+  cutadapt -a ${ADAPT_SE} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${old_name}.fastq.gz
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
