@@ -70,7 +70,7 @@ while test $# -gt 0; do
     echo "                   [default: 0]"
     echo "--UMI2=0           The length of UMI barcode on the 5' of R2 read. "
     echo "                   [default: 0]"
-    echo "If either UMI1 or UMI2 are set > 0, The pipeline will perform PCR deduplicate."
+    echo "When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate."
     echo ""
     echo "--ADD_B1=0    The length of additional barcode that will be trimmed"
     echo "                    on the 5' of R1 read. [default: 0]"
