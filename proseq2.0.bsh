@@ -515,7 +515,7 @@ if [[ "$SEQ" == "PE" ]] ; then
 echo " "
 echo "Preprocessing fastq files:"
 mkdir ${TMPDIR}/noadapt
-mkdir ${TMPDIR}/nodups
+mkdir ${TMPDIR}/passQC
 
 for name in ${FQ_INPUT[@]}
  do
@@ -546,30 +546,32 @@ for name in ${FQ_INPUT[@]}
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
   if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
    # Remove PCR duplciates.
-   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -fastq2 ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -fastq2 ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
-   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/nodups/${name}_dedup_withBarcode_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
-   prinseq-lite.pl -trim_left ${n2} -fastq ${TMPDIR}/nodups/${name}_dedup_withBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${n2} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq
    # min_len 15
-   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1.fastq -fastq2 ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
   else
    # trim the additional barcode ${ADD_B1} and ${ADD_B2} WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
-   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
-   prinseq-lite.pl -trim_left ${ADD_B2} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${ADD_B2} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # min_len 15
-   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode_1.fastq -fastq2 ${TMPDIR}/nodups/${name}_dedup_NoBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
   fi
 
 
   rm ${TMPDIR}/${name}_trim_R1.fastq ${TMPDIR}/${name}_untrim_R1.fastq ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq
   rm ${TMPDIR}/${name}_trim_R2.fastq ${TMPDIR}/${name}_untrim_R2.fastq ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq
+  rm ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq
 
  done
 
 wait
 ## Cleanup.
 rm -r ${TMPDIR}/noadapt 
-gzip ${TMPDIR}/nodups/*.fastq 
+gzip ${TMPDIR}/passQC/*.fastq 
 
 
 #############################################
@@ -577,7 +579,7 @@ gzip ${TMPDIR}/nodups/*.fastq
 echo " "
 echo "Mapping reads:"
 
-QC_INPUT=`ls  ${TMPDIR}/nodups/*_dedup_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
+QC_INPUT=`ls  ${TMPDIR}/passQC/*_dedup_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
@@ -591,7 +593,7 @@ fi
 for name in ${QC_INPUT}
  do
   ## Align using BWA.
-  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/nodups/${name}_1.fastq.gz ${TMPDIR}/nodups/${name}_2.fastq.gz | \
+  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
 	samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
 		
   cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
@@ -657,7 +659,7 @@ for f in ${TMPDIR}/*.sort.bam
    bedGraphToBigWig ${TMPDIR}/$j\_plus.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.bw
    bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw
 
-   #rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
+   rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
  done
 
 fi #*/
@@ -669,7 +671,7 @@ if [[ "$SEQ" == "SE" ]] ; then
 echo " "
 echo "Preprocessing fastq files:"
 mkdir ${TMPDIR}/noadapt
-mkdir ${TMPDIR}/nodups
+mkdir ${TMPDIR}/passQC
 
 for name in ${FQ_INPUT[@]}
  do
@@ -690,29 +692,29 @@ for name in ${FQ_INPUT[@]}
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
   if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
    # Remove PCR duplciates.
-   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
-   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/nodups/${name}_dedup_withBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
- 
+   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq
    # min_len 15
-   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
   else
    # trim the additional barcode WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
-   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_NoBarcode 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # min_len 15
-   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/nodups/${name}_dedup_NoBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/nodups/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
   fi
 
 
   rm ${TMPDIR}/${name}_trim.fastq ${TMPDIR}/${name}_untrim.fastq ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq
-
+  rm ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq
 
  done
 
 wait
 ## Cleanup.
-#rm -r ${TMPDIR}/noadapt 
-gzip ${TMPDIR}/nodups/*.fastq 
+rm -r ${TMPDIR}/noadapt 
+gzip ${TMPDIR}/passQC/*.fastq 
 
 
 #############################################
@@ -720,7 +722,7 @@ gzip ${TMPDIR}/nodups/*.fastq
 echo " "
 echo "Mapping reads:"
 
-QC_INPUT=`ls  ${TMPDIR}/nodups/*_dedup_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
+QC_INPUT=`ls  ${TMPDIR}/passQC/*_dedup_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 2- | cut -d _ -f2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
@@ -734,7 +736,7 @@ fi
 for name in ${QC_INPUT}
  do
   ## Align using BWA.
-  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/nodups/${name}_end.fastq.gz | \
+  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
   samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
 done
 
@@ -791,7 +793,7 @@ for f in ${TMPDIR}/*.sort.bam
    bedGraphToBigWig ${TMPDIR}/$j\_plus.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.bw
    bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw
 
-   #rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
+   rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
  done
 
 
