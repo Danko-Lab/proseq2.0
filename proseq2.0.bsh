@@ -504,7 +504,7 @@ echo "number of threads         $thread"
 
 
 ## Exits .. for debugging.
-exit 1
+#exit 1
 
 ## DOIT!
 mkdir ${TMPDIR}
