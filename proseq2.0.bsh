@@ -302,7 +302,7 @@ if [[ "$SEQ" == "PE" ]] ; then
       echo ""
     else
     FQ_INPUT+=(${name}) # append to the array
-    echo ${FQ_INPUT} 
+    #echo ${FQ_INPUT} 
     fi
   done
 
@@ -382,9 +382,15 @@ if [ -z "$ADAPT1" ]; then
 fi
 if [ -z "$UMI1" ]; then
    UMI1=0
+elif [[ $[UMI1] -lt 0 ]]; then
+  echo "UMI1 only take natural number"
+  exit 1
 fi
 if [ -z "$UMI2" ]; then
    UMI2=0
+elif [[ $[UMI2] -lt 0 ]]; then
+  echo "UMI2 only take natural number"
+  exit 1
 fi
 if [ -z "$ADD_B1" ]; then
    ADD_B1=0
@@ -498,7 +504,7 @@ echo "number of threads         $thread"
 
 
 ## Exits .. for debugging.
-#exit 1
+exit 1
 
 ## DOIT!
 mkdir ${TMPDIR}
