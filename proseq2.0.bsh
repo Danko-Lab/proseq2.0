@@ -519,6 +519,13 @@ mkdir ${TMPDIR}/passQC
 
 for name in ${FQ_INPUT[@]}
  do
+  ## read stats
+  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
+  echo ${name}_R1.fastq.gz >> ${OUTPUT}/${name}.QC.log
+  zcat ${name}_R1.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo ${name}_R2.fastq.gz >> ${OUTPUT}/${name}.QC.log
+  zcat ${name}_R2.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
   cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${name}_R1.fastq.gz &
@@ -542,6 +549,11 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
 
   wait
+  echo 'Number of reads after adapter removal and QC:' >> ${OUTPUT}/${name}.QC.log
+  echo R1 >> ${OUTPUT}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo R2 >> ${OUTPUT}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
 
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
   if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
@@ -554,6 +566,8 @@ for name in ${FQ_INPUT[@]}
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq
+   echo 'Number of paired reads after PCR duplicates removal and QC:' >> ${OUTPUT}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_dedup_QC_end_1.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
   else
    # trim the additional barcode ${ADD_B1} and ${ADD_B2} WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
    prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -561,6 +575,8 @@ for name in ${FQ_INPUT[@]}
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_QC_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_BarcodeRemoved_1.fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved_2.fastq
+   echo 'Number of paired reads after final QC:' >> ${OUTPUT}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_QC_end_1.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
   fi
 
 
