@@ -80,13 +80,18 @@ Options for PE
 Optional operations:
 --ADAPT_SE=TGGAATTCTCGGGTGCCAAGG
                     3' adapter to be removed from the 3' end of SE reads.
+                   [default:TGGAATTCTCGGGTGCCAAGG]
 --ADAPT1=GATCGTCGGACTGTAGAACTCTGAACG
                     3' adapter to be removed from the 3' end of R2.
+                   [default:GATCGTCGGACTGTAGAACTCTGAACG]
 --ADAPT2=AGATCGGAAGAGCACACGTCTGAACTC
                     3' adapter to be removed from the 3' end of R1.
+                   [default:AGATCGGAAGAGCACACGTCTGAACTC]
 
---UMI1=0            The length of UMI barcode on the 5' of R1 read. [default: 0]
---UMI2=0            The length of UMI barcode on the 5' of R2 read. [default: 0]
+--UMI1=0           The length of UMI barcode on the 5' of R1 read.
+                   [default: 0]
+--UMI2=0           The length of UMI barcode on the 5' of R2 read.
+                   [default: 0]
 --ADD_B1=0    The length of additional barcode that will be trimmed
                     on the 5' of R1 read. [default: 0]
 --ADD_B2=0    The length of additional barcode that will be trimmed
