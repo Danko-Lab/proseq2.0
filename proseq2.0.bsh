@@ -544,11 +544,11 @@ for name in ${FQ_INPUT[@]}
   old_name=${name}
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
   ## read stats
-  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
-  echo ${old_name}_R1.fastq.gz >> ${OUTPUT}/${name}.QC.log
-  zcat ${old_name}_R1.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
-  echo ${old_name}_R2.fastq.gz >> ${OUTPUT}/${name}.QC.log
-  zcat ${old_name}_R2.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo 'Number of original input reads:' > ${TMPDIR}/${name}.QC.log
+  echo ${old_name}_R1.fastq.gz >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}_R1.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  echo ${old_name}_R2.fastq.gz >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}_R2.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
 
 
@@ -575,11 +575,11 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
 
   wait
-  echo 'Number of reads after adapter removal and QC:' >> ${OUTPUT}/${name}.QC.log
-  echo R1 >> ${OUTPUT}/${name}.QC.log
-  cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
-  echo R2 >> ${OUTPUT}/${name}.QC.log
-  cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo 'Number of reads after adapter removal and QC:' >> ${TMPDIR}/${name}.QC.log
+  echo R1 >> ${TMPDIR}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  echo R2 >> ${TMPDIR}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes or $Force_deduplicate=TRUE
   if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then 
@@ -592,8 +592,8 @@ for name in ${FQ_INPUT[@]}
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq
-   echo 'Number of paired reads after PCR duplicates removal and QC:' >> ${OUTPUT}/${name}.QC.log
-   cat ${TMPDIR}/passQC/${name}_dedup_QC_end_1.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+   echo 'Number of paired reads after PCR duplicates removal and QC:' >> ${TMPDIR}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_dedup_QC_end_1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   else
    # trim the additional barcode ${ADD_B1} and ${ADD_B2} WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
    prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -601,8 +601,8 @@ for name in ${FQ_INPUT[@]}
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_QC_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_BarcodeRemoved_1.fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved_2.fastq
-   echo 'Number of paired reads after final QC:' >> ${OUTPUT}/${name}.QC.log
-   cat ${TMPDIR}/passQC/${name}_QC_end_1.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+   echo 'Number of paired reads after final QC:' >> ${TMPDIR}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_QC_end_1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   fi
 
 
@@ -722,9 +722,9 @@ for name in ${FQ_INPUT[@]}
   old_name=${name}
   name=`echo ${old_name} | rev | cut -d \/ -f 1| rev`
   ## read stats
-  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
-  echo ${old_name} >>  ${OUTPUT}/${name}.QC.log
-  zcat ${old_name}.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo ${old_name} >  ${TMPDIR}/${name}.QC.log
+  echo 'Number of original input reads:' >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
@@ -739,8 +739,8 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt.fastq &
 
   wait
-  echo 'Number of reads after adapter removal and QC:' >> ${OUTPUT}/${name}.QC.log
-  cat ${TMPDIR}/noadapt/${name}_noadapt.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo 'Number of reads after adapter removal and QC:' >> ${TMPDIR}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
 
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
@@ -752,16 +752,16 @@ for name in ${FQ_INPUT[@]}
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq
-   echo 'Number of reads after PCR duplicates removal and QC:' >> ${OUTPUT}/${name}.QC.log
-   cat ${TMPDIR}/passQC/${name}_dedup_QC_end.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+   echo 'Number of reads after PCR duplicates removal and QC:' >> ${TMPDIR}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_dedup_QC_end.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   else
    # trim the additional barcode WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
    prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_QC_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_BarcodeRemoved.fastq
-   echo 'Number of reads after final QC:' >> ${OUTPUT}/${name}.QC.log
-   cat ${TMPDIR}/passQC/${name}_QC_end.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
+   echo 'Number of reads after final QC:' >> ${TMPDIR}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_QC_end.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   fi
 
 
@@ -859,6 +859,16 @@ for f in ${TMPDIR}/*.sort.bam
 
 fi
 
+echo "QC" > ${OUTPUT}/proseq2.0_Run.log
+for old_name in ${FQ_INPUT[@]}
+ do
+  name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
+  cat ${TMPDIR}/${name}.QC.log >> ${OUTPUT}/proseq2.0_Run.log
+ done
+for f in ${TMPDIR}/*.sort.bam
+ do j=`echo $f | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- |rev `
+ cat ${OUTPUT}/${j}.align.log >> ${OUTPUT}/proseq2.0_Run.log
+ done
 
 
 
