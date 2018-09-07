@@ -72,6 +72,10 @@ while test $# -gt 0; do
     echo "                   [default: 0]"
     echo "When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate."
     echo ""
+    echo "--Force_deduplicate=FALSE"
+    echo "                   When --Force_deduplicate=TRUE, it will force the pipeline to"
+    echo "                   perform PCR deduplicate even there is no UMI barcode"
+    echo "                   (i.e. UMI1=0 and UMI2=0). [default: FALSE]"      
     echo "--ADD_B1=0    The length of additional barcode that will be trimmed"
     echo "                    on the 5' of R1 read. [default: 0]"
     echo "--ADD_B2=0    The length of additional barcode that will be trimmed"
@@ -212,6 +216,10 @@ while test $# -gt 0; do
                         ;;
                 --UMI2*)
                         export UMI2=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --Force_deduplicate*)
+                        export Force_deduplicate=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
                 --ADD_B1*)
@@ -392,6 +400,16 @@ elif [[ $[UMI2] -lt 0 ]]; then
   echo "UMI2 only take natural number"
   exit 1
 fi
+if [ -z "$Force_deduplicate" ]; then
+   Force_deduplicate="FALSE"
+elif [[ "$Force_deduplicate" == "TRUE" || "$Force_deduplicate" == "FALSE" ]] ; then
+:
+else
+  echo "Force_deduplicate only take TRUE or FALSE"
+  exit 1
+fi
+
+
 if [ -z "$ADD_B1" ]; then
    ADD_B1=0
 fi
@@ -500,7 +518,11 @@ echo "UMI2 barcode length       $UMI2"
 echo "ADD_B1 length             $ADD_B1"
 echo "ADD_B2 length             $ADD_B2"
 echo "number of threads         $thread"
-
+if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then 
+ echo "Remove PCR duplicates     TRUE"
+else
+ echo "Remove PCR duplicates     FALSE"
+fi
 
 
 ## Exits .. for debugging.
@@ -519,15 +541,16 @@ mkdir ${TMPDIR}/passQC
 
 for name in ${FQ_INPUT[@]}
  do
-  ## read stats
-  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
-  echo ${name}_R1.fastq.gz >> ${OUTPUT}/${name}.QC.log
-  zcat ${name}_R1.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
-  echo ${name}_R2.fastq.gz >> ${OUTPUT}/${name}.QC.log
-  zcat ${name}_R2.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
-
   old_name=${name}
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
+  ## read stats
+  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
+  echo ${old_name}_R1.fastq.gz >> ${OUTPUT}/${name}.QC.log
+  zcat ${old_name}_R1.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+  echo ${old_name}_R2.fastq.gz >> ${OUTPUT}/${name}.QC.log
+  zcat ${old_name}_R2.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
+
+
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
@@ -558,8 +581,8 @@ for name in ${FQ_INPUT[@]}
   echo R2 >> ${OUTPUT}/${name}.QC.log
   cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | grep @ -c >> ${OUTPUT}/${name}.QC.log
 
-  ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
-  if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+  ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes or $Force_deduplicate=TRUE
+  if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then 
    # Remove PCR duplciates.
    prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -fastq2 ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
@@ -696,12 +719,12 @@ mkdir ${TMPDIR}/passQC
 
 for name in ${FQ_INPUT[@]}
  do
-  ## read stats
-  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
-  zcat ${name}.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
-
   old_name=${name}
   name=`echo ${old_name} | rev | cut -d \/ -f 1| rev`
+  ## read stats
+  echo 'Number of original input reads:' > ${OUTPUT}/${name}.QC.log
+  echo ${old_name} >>  ${OUTPUT}/${name}.QC.log
+  zcat ${old_name}.fastq.gz | grep @ -c >> ${OUTPUT}/${name}.QC.log
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
@@ -721,7 +744,7 @@ for name in ${FQ_INPUT[@]}
 
 
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
-  if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+  if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then 
    # Remove PCR duplciates.
    prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
