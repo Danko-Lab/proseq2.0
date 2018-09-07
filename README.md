@@ -92,8 +92,12 @@ Optional operations:
                    [default: 0]
 --UMI2=0           The length of UMI barcode on the 5' of R2 read.
                    [default: 0]
-If either UMI1 or UMI2 are set > 0, The pipeline will perform PCR deduplicate.
+When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 
+--Force_deduplicate=FALSE
+                   When --Force_deduplicate=TRUE, it will force the pipeline to
+                   perform PCR deduplicate even there is no UMI barcode
+                   (i.e. UMI1=0 and UMI2=0). [default: FALSE]
 --ADD_B1=0    The length of additional barcode that will be trimmed
                     on the 5' of R1 read. [default: 0]
 --ADD_B2=0    The length of additional barcode that will be trimmed
