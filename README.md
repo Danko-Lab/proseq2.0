@@ -136,7 +136,7 @@ bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -T myOutput2 -O myOutput2 -
 ```
 ### Example 3
 
-PREFIX_R1.fastq.gz and PREFIX_R2.fastq.gz were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
+__PREFIX_R1.fastq.gz__ and __PREFIX_R2.fastq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
 * Please note that Paired-end files require identical PREFIX and end with _R1.fastq.gz and _R2.fastq.gz.
 
   Assign the file use __-I PREFIX__. No _R1.fastq.gz, _R2.fastq.gz, nor *fastq.gz is in the end.
