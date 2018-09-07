@@ -92,8 +92,12 @@ Optional operations:
                    [default: 0]
 --UMI2=0           The length of UMI barcode on the 5' of R2 read.
                    [default: 0]
-If either UMI1 or UMI2 are set > 0, The pipeline will perform PCR deduplicate.
+When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 
+--Force_deduplicate=FALSE
+                   When --Force_deduplicate=TRUE, it will force the pipeline to
+                   perform PCR deduplicate even there is no UMI barcode
+                   (i.e. UMI1=0 and UMI2=0). [default: FALSE]
 --ADD_B1=0    The length of additional barcode that will be trimmed
                     on the 5' of R1 read. [default: 0]
 --ADD_B2=0    The length of additional barcode that will be trimmed
@@ -132,7 +136,7 @@ bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -T myOutput2 -O myOutput2 -
 ```
 ### Example 3
 
-PREFIX_R1.fastq.gz and PREFIX_R2.fastq.gz were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
+__PREFIX_R1.fastq.gz__ and __PREFIX_R2.fastq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
 * Please note that Paired-end files require identical PREFIX and end with _R1.fastq.gz and _R2.fastq.gz.
 
   Assign the file use __-I PREFIX__. No _R1.fastq.gz, _R2.fastq.gz, nor *fastq.gz is in the end.
