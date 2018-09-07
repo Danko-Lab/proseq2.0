@@ -865,6 +865,8 @@ for old_name in ${FQ_INPUT[@]}
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
   cat ${TMPDIR}/${name}.QC.log >> ${OUTPUT}/proseq2.0_Run.log
  done
+echo "" >> ${OUTPUT}/proseq2.0_Run.log
+echo "Mapping" >> ${OUTPUT}/proseq2.0_Run.log
 for f in ${TMPDIR}/*.sort.bam
  do j=`echo $f | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- |rev `
  cat ${OUTPUT}/${j}.align.log >> ${OUTPUT}/proseq2.0_Run.log
