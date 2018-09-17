@@ -98,11 +98,16 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
                    When --Force_deduplicate=TRUE, it will force the pipeline to
                    perform PCR deduplicate even there is no UMI barcode
                    (i.e. UMI1=0 and UMI2=0). [default: FALSE]
---ADD_B1=0    The length of additional barcode that will be trimmed
-                    on the 5' of R1 read. [default: 0]
---ADD_B2=0    The length of additional barcode that will be trimmed
-                    on the 5' of R2 read. [default: 0]
---thread=1          Number of threads can be used [default: 1]
+--ADD_B1=0         The length of additional barcode that will be trimmed
+                   on the 5' of R1 read. [default: 0]
+--ADD_B2=0         The length of additional barcode that will be trimmed
+                   on the 5' of R2 read. [default: 0]
+--thread=1         Number of threads can be used [default: 1]
+
+--4DREG            Using the pre-defined parameters to get the most reads
+                   for dREG package. Please use this flag to make the bigWig
+                   files compatible with dREG algorithm.
+
 ```
 <img src="images/lib.png">
 
@@ -176,3 +181,15 @@ export dog_chinfo=/local/storage/data/canFam3/canFam3.chromInfo
 ``` 
 
 3. Using --UMI1=6 to replace -b6 if you have used it in the old version (proseqMapper.bsh).
+
+## Notes for **dREG** users:
+
+In order to make the most compatible with dREG algorithm, please use **--4DREG** flag when you process the PRO-seq and GRO-seq reads. The dREG package needs enriched reads to 
+detect the transcriptional peaks, we use the "bwa aln" to do mappping and set lower filtering score (0) to get the most reads in this pipeline. 
+
+Here is an examples to generate the bigWig for dREG.
+
+```
+bash proseq2.0.bsh -SE -G --4DREG -i $dog_genome -c $dog_chinfo -I ./example1_R1.fastq.gz  -T ./tmpdir -O ./outputdir
+```
+

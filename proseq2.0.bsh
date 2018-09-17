@@ -81,6 +81,10 @@ while test $# -gt 0; do
     echo "--ADD_B2=0    The length of additional barcode that will be trimmed"
     echo "                    on the 5' of R2 read. [default: 0]"
     echo "--thread=1          Number of threads can be used [default: 1]"
+    echo ""
+    echo "--4DREG             Using the pre-defined parameters to get the most reads"
+    echo "                    for dREG package. Please use this flag to make the bigWig"
+    echo "                    files compatible with dREG algorithm." 
 
 
 
@@ -248,6 +252,10 @@ while test $# -gt 0; do
                         ;;
                 --SE_READ*)
                         export SE_READ=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                --4DREG*)
+                        export DREG_MODEL=1
                         shift
                         ;;
                 *)
@@ -471,6 +479,11 @@ done
 echo " " 
 echo "Processing PRO-seq data ..." 
 echo " "
+
+if [[ ! -z "$DREG_MODEL" ]]; then
+    echo "dREG compatible mode      Yes"
+fi
+
 echo "SEQ                       $SEQ"
 
 if [[ "$SEQ" == "SE" ]]; then
@@ -792,12 +805,32 @@ if [[ ${#QC_INPUT} == 0 ]]; then
   exit 1
 fi
 
-for name in ${QC_INPUT}
- do
-  ## Align using BWA.
-  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
-  samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
-done
+if [[ -z "$DREG_MODEL" ]]; then
+  for name in ${QC_INPUT}
+    do
+    ## Align using BWA.
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+    samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+    done
+else
+  echo "Aligning reads using the same parameters with dREG" 
+  for name in ${QC_INPUT}
+    do
+    ## Align using BWA aln , same as the original dreg model.
+    bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+    bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+    done
+  
+  wait
+
+  for name in ${QC_INPUT}
+    do
+    samtools view -b -q 0 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+    done
+  
+  wait
+
+fi
 
 wait
 
