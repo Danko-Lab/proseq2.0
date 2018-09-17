@@ -82,7 +82,7 @@ while test $# -gt 0; do
     echo "                    on the 5' of R2 read. [default: 0]"
     echo "--thread=1          Number of threads can be used [default: 1]"
     echo ""
-    echo "--4DREG             Using the pre-defined parameters to get the most reads"
+    echo "-4DREG              Using the pre-defined parameters to get the most reads"
     echo "                    for dREG package. Please use this flag to make the bigWig"
     echo "                    files compatible with dREG algorithm." 
 
@@ -254,7 +254,7 @@ while test $# -gt 0; do
                         export SE_READ=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
-                --4DREG*)
+                -4DREG*)
                         export DREG_MODEL=1
                         shift
                         ;;

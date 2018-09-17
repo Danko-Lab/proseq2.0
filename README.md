@@ -104,7 +104,7 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
                    on the 5' of R2 read. [default: 0]
 --thread=1         Number of threads can be used [default: 1]
 
---4DREG            Using the pre-defined parameters to get the most reads
+-4DREG             Using the pre-defined parameters to get the most reads
                    for dREG package. Please use this flag to make the bigWig
                    files compatible with dREG algorithm.
 
@@ -184,12 +184,12 @@ export dog_chinfo=/local/storage/data/canFam3/canFam3.chromInfo
 
 ## Notes for **dREG** users:
 
-In order to make the most compatible with dREG algorithm, please use **--4DREG** flag when you process the PRO-seq and GRO-seq reads. The dREG package needs enriched reads to 
+In order to make the most compatible with dREG algorithm, please use **-4DREG** flag when you process the PRO-seq and GRO-seq reads. The dREG package needs enriched reads to 
 detect the transcriptional peaks, we use the "bwa aln" to do mappping and set lower filtering score (0) to get the most reads in this pipeline. 
 
 Here is an examples to generate the bigWig for dREG.
 
 ```
-bash proseq2.0.bsh -SE -G --4DREG -i $dog_genome -c $dog_chinfo -I ./example1_R1.fastq.gz  -T ./tmpdir -O ./outputdir
+bash proseq2.0.bsh -SE -G -4DREG -i $dog_genome -c $dog_chinfo -I ./example1_R1.fastq.gz  -T ./tmpdir -O ./outputdir
 ```
 
