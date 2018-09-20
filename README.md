@@ -16,7 +16,7 @@ To run our pipeline users must first download the pipeline files and install dep
 The pipelines depend on several common bioinformatics tools: 
 - [ ] cutadapt (https://cutadapt.readthedocs.io/en/stable/installation.html)
 - [ ] prinseq-lite.pl (https://sourceforge.net/projects/prinseq/files/standalone/)
-- [ ] bwa
+- [ ] bwa (https://sourceforge.net/projects/bio-bwa/files/)
 - [ ] samtools (http://www.htslib.org/download/)
 - [ ] bedtools (http://bedtools.readthedocs.org/en/latest/)
 - [ ] bedGraphToBigWig (from the Kent source utilities http://hgdownload.cse.ucsc.edu/admin/exe/)
