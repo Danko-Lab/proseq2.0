@@ -470,7 +470,7 @@ else
 fi
 
 ## Check all the bioinformatics tools can be called from current working directory.
-for tool in cutadapt prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig
+for tool in cutadapt prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig sort-bed
 do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
 done
 
