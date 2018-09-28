@@ -1,0 +1,95 @@
+#!/usr/bin/bash
+#
+#CHINFO=/fs/cbsudanko/storage/data/hg19/hg19.chromInfo
+
+function show_help {
+  echo "bash mergeBigWigs.bsh --chrom-info=PATH [out.bigWig] [input BigWig files]"
+  echo " "
+  echo "-c, "
+  echo "--chrom-info=PATH    Location of the chromInfo table."
+  echo ""
+  echo "options:"
+  echo " "
+  echo "To get help:"
+  echo "-h,"
+  echo "--help    show this brief help menu."
+  echo " "
+  echo " "
+  exit 0
+}
+
+
+bwFiles=()
+while test $# -gt 0; do
+    case "$1" in
+        -h|--help)
+                show_help
+                exit 0
+                ;;
+        --chrom-info*)
+                export CHINFO=`echo $1 | sed -e 's/^[^=]*=//g'`
+                shift
+                ;;                
+        -c)
+               shift
+               if test $# -gt 0; then
+                  export CHINFO=$1
+               else
+                  echo "No chromInfo table is specified."
+                 exit 1
+               fi
+               shift
+               ;;
+                
+        *)
+               bwFiles+=($1)
+               shift
+               ;;
+        esac
+done
+
+
+if [ ${#bwFiles[@]} -eq 0 ]
+then
+    show_help
+    exit 0
+fi
+
+if [ ${#bwFiles[@]} -lt 3 ] 
+then
+    echo "Error: Input files less than 2"
+    exit 1
+fi
+
+if [ $CHINFO = "" ] 
+then
+   echo "Error: No chromInfo table is specified."
+   exit 1
+fi
+
+#get the final file name
+mergeBw=${bwFiles[0]}
+echo "Output bigWig: $mergeBw"
+#remove the first element
+unset bwFiles[0]
+echo "Input bigWigs: ${bwFiles[*]}"
+
+for tool in bedtools bedGraphToBigWig bigWigToBedGraph
+    do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
+done
+
+WORKDIR=`mktemp -d`
+
+for i in ${bwFiles[*]}
+do
+   bigWigToBedGraph $i $WORKDIR/$i.bedGraph
+done
+
+bedtools unionbedg -i `ls ${WORKDIR}/*.bedGraph` | awk 'BEGIN{OFS="\t"} {sum=0; for (i=4; i<=NF; i++) { sum+= $i } print $1,$2,$3, sum}' > ${WORKDIR}/all.bed
+
+bedGraphToBigWig ${WORKDIR}/all.bed $CHINFO $mergeBw
+
+#echo $WORKDIR
+
+rm -Rf $WORKDIR
+
