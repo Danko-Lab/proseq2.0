@@ -3,7 +3,7 @@
 #CHINFO=/fs/cbsudanko/storage/data/hg19/hg19.chromInfo
 
 function show_help {
-  echo "bash mergeBigWigs.bsh --chrom-info=PATH [out.bigWig] [input BigWig files]"
+  echo "bash mergeBigWigs.bsh --chrom-info=PATH out.bigWig input_bigWig1 input_bigWig2 [ input_bigWig3 ...]"
   echo " "
   echo "-c, "
   echo "--chrom-info=PATH    Location of the chromInfo table."
@@ -91,5 +91,4 @@ bedGraphToBigWig ${WORKDIR}/all.bed $CHINFO $mergeBw
 
 #echo $WORKDIR
 
-rm -Rf $WORKDIR
-
+rm -rf $WORKDIR
