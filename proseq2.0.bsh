@@ -85,7 +85,7 @@ while test $# -gt 0; do
     echo "-4DREG             Using the pre-defined parameters to get the most reads"
     echo "                   for dREG package. Please use this flag to make the bigWig"
     echo "                   files compatible with dREG algorithm. [default: off]" 
-    echo "-mem               Using BWA-MEM [default: BWA-backtrack]"
+    echo "-mem               Use BWA-MEM [default: BWA-backtrack]"
 
 
 
@@ -655,14 +655,39 @@ if [[ ${#QC_INPUT} == 0 ]]; then
   exit 1
 fi
 
+if [[ -z "$mem" ]]; then #use aln, Not mem
+ for name in ${QC_INPUT}
+  do
+  ## Align using BWA aln
+  bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+  bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+  bwa sampe -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz
+
+  samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+  rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${TMPDIR}/passQC/${name}_end.sam
+  done
+
+else #use mem
+  for name in ${QC_INPUT}
+    do
+    ## Align using BWA.
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
+    samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+  done
+fi
+
+
 for name in ${QC_INPUT}
- do
-  ## Align using BWA.
-  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
-	samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
-		
-  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
- done
+  do
+  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} &
+done
+wait
+
+
+
+
+
+
 
 ## Cleanup
 #find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
@@ -814,10 +839,10 @@ if [[ ${#QC_INPUT} == 0 ]]; then
 fi
 
 if [[ -z "$DREG_MODEL" ]]; then
-  if [[ -z "$mem" ]]; then #Not mem
+  if [[ -z "$mem" ]]; then #use aln, Not mem
     for name in ${QC_INPUT}
       do
-      ## Align using BWA aln , same as the original dreg model.
+      ## Align using BWA aln
       bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
       bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
       done
@@ -827,6 +852,13 @@ if [[ -z "$DREG_MODEL" ]]; then
       samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
     wait
+    for name in ${QC_INPUT}
+      do
+      rm ${TMPDIR}/passQC/${name}_end.sam
+      cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
+    done
+    wait
+
   else
     for name in ${QC_INPUT}
       do
@@ -834,8 +866,14 @@ if [[ -z "$DREG_MODEL" ]]; then
       bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
       samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
+      wait
+    for name in ${QC_INPUT}
+      do
+      cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
+      done
+      wait
   fi
-else
+else #dREG
   echo "Aligning reads using the same parameters with dREG" 
   for name in ${QC_INPUT}
     do
@@ -852,13 +890,15 @@ else
     done
   
   wait
-
+  for name in ${QC_INPUT}
+   do
+   rm ${TMPDIR}/passQC/${name}_end.sam
+   cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
+   done
+   wait
 fi
 
 wait
-  rm ${TMPDIR}/passQC/*.sam
-  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
-
 
 
 ## Cleanup
