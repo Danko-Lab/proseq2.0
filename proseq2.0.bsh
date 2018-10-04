@@ -76,15 +76,16 @@ while test $# -gt 0; do
     echo "                   When --Force_deduplicate=TRUE, it will force the pipeline to"
     echo "                   perform PCR deduplicate even there is no UMI barcode"
     echo "                   (i.e. UMI1=0 and UMI2=0). [default: FALSE]"      
-    echo "--ADD_B1=0    The length of additional barcode that will be trimmed"
-    echo "                    on the 5' of R1 read. [default: 0]"
-    echo "--ADD_B2=0    The length of additional barcode that will be trimmed"
-    echo "                    on the 5' of R2 read. [default: 0]"
-    echo "--thread=1          Number of threads can be used [default: 1]"
+    echo "--ADD_B1=0         The length of additional barcode that will be trimmed"
+    echo "                   on the 5' of R1 read. [default: 0]"
+    echo "--ADD_B2=0         The length of additional barcode that will be trimmed"
+    echo "                   on the 5' of R2 read. [default: 0]"
+    echo "--thread=1         Number of threads can be used [default: 1]"
     echo ""
-    echo "-4DREG              Using the pre-defined parameters to get the most reads"
-    echo "                    for dREG package. Please use this flag to make the bigWig"
-    echo "                    files compatible with dREG algorithm." 
+    echo "-4DREG             Using the pre-defined parameters to get the most reads"
+    echo "                   for dREG package. Please use this flag to make the bigWig"
+    echo "                   files compatible with dREG algorithm. [default: off]" 
+    echo "-mem               Using BWA-MEM [default: BWA-backtrack]"
 
 
 
@@ -256,6 +257,10 @@ while test $# -gt 0; do
                         ;;
                 -4DREG*)
                         export DREG_MODEL=1
+                        shift
+                        ;;
+                -mem*)
+                        export mem=1
                         shift
                         ;;
                 *)
@@ -806,12 +811,27 @@ if [[ ${#QC_INPUT} == 0 ]]; then
 fi
 
 if [[ -z "$DREG_MODEL" ]]; then
-  for name in ${QC_INPUT}
-    do
-    ## Align using BWA.
-    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
-    samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
-    done
+  if [[ -z "$mem" ]]; then
+    for name in ${QC_INPUT}
+      do
+      ## Align using BWA aln , same as the original dreg model.
+      bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+      bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+      done
+    wait
+    for name in ${QC_INPUT}
+      do
+      samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      done
+    wait
+  else
+    for name in ${QC_INPUT}
+      do
+      ## Align using BWA.
+      bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+      samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      done
+  fi
 else
   echo "Aligning reads using the same parameters with dREG" 
   for name in ${QC_INPUT}
