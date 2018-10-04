@@ -386,7 +386,8 @@ if [ ! -d $TMPDIR ]; then
   mkdir $TMPDIR
 fi
 # bash generate random 32 character alphanumeric string (upper and lowercase).
-TMPDIR=$TMPDIR/$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+tmp=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+TMPDIR=$TMPDIR/$tmp
 
 if [ -z "$thread" ]; then
    thread=1
@@ -479,7 +480,9 @@ for tool in cutadapt prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig sort
 do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
 done
 
-
+#exec 1>test.log 2>&1
+exec > >(tee ${OUTPUT}/proseq2.0_Run_${tmp}.log)
+exec 2>&1
 ## Print out
 echo " " 
 echo "Processing PRO-seq data ..." 
@@ -912,17 +915,17 @@ for f in ${TMPDIR}/*.sort.bam
 
 fi
 
-echo "QC" > ${OUTPUT}/proseq2.0_Run.log
+echo "QC" > ${OUTPUT}/proseq2.0_read_report_${tmp}.log
 for old_name in ${FQ_INPUT[@]}
  do
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
-  cat ${TMPDIR}/${name}.QC.log >> ${OUTPUT}/proseq2.0_Run.log
+  cat ${TMPDIR}/${name}.QC.log >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
  done
-echo "" >> ${OUTPUT}/proseq2.0_Run.log
-echo "Mapping" >> ${OUTPUT}/proseq2.0_Run.log
+echo "" >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
+echo "Mapping" >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
 for f in ${TMPDIR}/*.sort.bam
  do j=`echo $f | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- |rev `
- cat ${OUTPUT}/${j}.align.log >> ${OUTPUT}/proseq2.0_Run.log
+ cat ${OUTPUT}/${j}.align.log >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
  done
 
 
