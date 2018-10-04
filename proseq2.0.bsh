@@ -814,7 +814,7 @@ if [[ ${#QC_INPUT} == 0 ]]; then
 fi
 
 if [[ -z "$DREG_MODEL" ]]; then
-  if [[ -z "$mem" ]]; then
+  if [[ -z "$mem" ]]; then #Not mem
     for name in ${QC_INPUT}
       do
       ## Align using BWA aln , same as the original dreg model.
@@ -856,7 +856,7 @@ else
 fi
 
 wait
-
+  rm ${TMPDIR}/passQC/*.sam
   cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
 
 
