@@ -690,7 +690,7 @@ wait
 
 
 ## Cleanup
-#find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
+find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
 
 #############################################
 ## Write out the bigWigs.
@@ -902,7 +902,7 @@ wait
 
 
 ## Cleanup
-#find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
+find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
 
 
 #############################################
