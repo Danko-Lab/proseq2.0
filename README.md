@@ -108,7 +108,8 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 -4DREG             Using the pre-defined parameters to get the most reads
                    for dREG package. Please use this flag to make the bigWig
                    files compatible with dREG algorithm.
--mem               Use BWA-MEM [default: BWA-backtrack]
+-aln               Use BWA-backtrack [default: SE uses BWA-backtrack, PE uses BWA-MEM]
+-mem               Use BWA-MEM [default: SE uses BWA-backtrack, PE uses BWA-MEM]
 
 ```
 <img src="images/lib.png">
