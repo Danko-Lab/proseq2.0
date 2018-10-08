@@ -342,7 +342,7 @@ elif [[ "$SEQ" == "SE" ]] ; then
   elif [[ "$SE_READ" == "RNA_3prime" ]] ; then
     SE_OUTPUT="P"
     RNA3="R1_5prime"
-    OPP="FALSE"
+    OPP="TRUE"
     #MAP5="TRUE"
   fi
   if [ -z "$SE_OUTPUT" ] ; then
