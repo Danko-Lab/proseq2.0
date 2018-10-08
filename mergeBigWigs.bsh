@@ -48,7 +48,6 @@ while test $# -gt 0; do
         esac
 done
 
-
 if [ ${#bwFiles[@]} -eq 0 ]
 then
     show_help
@@ -61,7 +60,7 @@ then
     exit 1
 fi
 
-if [ $CHINFO = "" ] 
+if [ "$CHINFO" = "" ] 
 then
    echo "Error: No chromInfo table is specified."
    exit 1
@@ -82,7 +81,7 @@ WORKDIR=`mktemp -d`
 
 for i in ${bwFiles[*]}
 do
-   bigWigToBedGraph $i $WORKDIR/$i.bedGraph
+   bigWigToBedGraph $i $WORKDIR/$(basename $i).bedGraph
 done
 
 bedtools unionbedg -i `ls ${WORKDIR}/*.bedGraph` | awk 'BEGIN{OFS="\t"} {sum=0; for (i=4; i<=NF; i++) { sum+= $i } print $1,$2,$3, sum}' > ${WORKDIR}/all.bed
