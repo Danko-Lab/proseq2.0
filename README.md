@@ -1,6 +1,8 @@
 # Proseq2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing. It is a new version of ProseqMapper (https://github.com/Danko-Lab/utils/tree/master/proseq).
 
+Currently we provide two commands: proseq mapper and bigWig merge.
+
 ## Overview
 Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
 + pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
@@ -12,7 +14,6 @@ To run our pipeline users must first download the pipeline files and install dep
 
 ## Dependencies: 
 
-
 The pipelines depend on several common bioinformatics tools: 
 - [ ] cutadapt (https://cutadapt.readthedocs.io/en/stable/installation.html)
 - [ ] prinseq-lite.pl (https://sourceforge.net/projects/prinseq/files/standalone/)
@@ -23,7 +24,6 @@ The pipelines depend on several common bioinformatics tools:
 - [ ] bedGraphToBigWig (from the Kent source utilities http://hgdownload.cse.ucsc.edu/admin/exe/)
 
 Please make sure you can call the bioinformatics tools from your current working directory.    
-
 
 ## Usage
 ```
@@ -108,6 +108,8 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 -4DREG             Using the pre-defined parameters to get the most reads
                    for dREG package. Please use this flag to make the bigWig
                    files compatible with dREG algorithm.
+-aln               Use BWA-backtrack [default: SE uses BWA-backtrack, PE uses BWA-MEM]
+-mem               Use BWA-MEM [default: SE uses BWA-backtrack, PE uses BWA-MEM]
 
 ```
 <img src="images/lib.png">

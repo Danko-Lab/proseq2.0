@@ -76,15 +76,17 @@ while test $# -gt 0; do
     echo "                   When --Force_deduplicate=TRUE, it will force the pipeline to"
     echo "                   perform PCR deduplicate even there is no UMI barcode"
     echo "                   (i.e. UMI1=0 and UMI2=0). [default: FALSE]"      
-    echo "--ADD_B1=0    The length of additional barcode that will be trimmed"
-    echo "                    on the 5' of R1 read. [default: 0]"
-    echo "--ADD_B2=0    The length of additional barcode that will be trimmed"
-    echo "                    on the 5' of R2 read. [default: 0]"
-    echo "--thread=1          Number of threads can be used [default: 1]"
+    echo "--ADD_B1=0         The length of additional barcode that will be trimmed"
+    echo "                   on the 5' of R1 read. [default: 0]"
+    echo "--ADD_B2=0         The length of additional barcode that will be trimmed"
+    echo "                   on the 5' of R2 read. [default: 0]"
+    echo "--thread=1         Number of threads can be used [default: 1]"
     echo ""
-    echo "-4DREG              Using the pre-defined parameters to get the most reads"
-    echo "                    for dREG package. Please use this flag to make the bigWig"
-    echo "                    files compatible with dREG algorithm." 
+    echo "-4DREG             Using the pre-defined parameters to get the most reads"
+    echo "                   for dREG package. Please use this flag to make the bigWig"
+    echo "                   files compatible with dREG algorithm. [default: off]" 
+    echo "-aln               Use BWA-backtrack [default: SE uses BWA-backtrack, PE uses BWA-MEM]"
+    echo "-mem               Use BWA-MEM [default: SE uses BWA-backtrack, PE uses BWA-MEM]"
 
 
 
@@ -258,6 +260,14 @@ while test $# -gt 0; do
                         export DREG_MODEL=1
                         shift
                         ;;
+                -mem*)
+                        export mem=1
+                        shift
+                        ;;
+                -aln*)
+                        export aln=1
+                        shift
+                        ;;
                 *)
                         break
                         ;;
@@ -332,7 +342,7 @@ elif [[ "$SEQ" == "SE" ]] ; then
   elif [[ "$SE_READ" == "RNA_3prime" ]] ; then
     SE_OUTPUT="P"
     RNA3="R1_5prime"
-    OPP="FALSE"
+    OPP="TRUE"
     #MAP5="TRUE"
   fi
   if [ -z "$SE_OUTPUT" ] ; then
@@ -381,7 +391,8 @@ if [ ! -d $TMPDIR ]; then
   mkdir $TMPDIR
 fi
 # bash generate random 32 character alphanumeric string (upper and lowercase).
-TMPDIR=$TMPDIR/$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+tmp=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+TMPDIR=$TMPDIR/$tmp
 
 if [ -z "$thread" ]; then
    thread=1
@@ -474,7 +485,9 @@ for tool in cutadapt prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig sort
 do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
 done
 
-
+#exec 1>test.log 2>&1
+exec > >(tee ${OUTPUT}/proseq2.0_Run_${tmp}.log)
+exec 2>&1
 ## Print out
 echo " " 
 echo "Processing PRO-seq data ..." 
@@ -574,16 +587,16 @@ for name in ${FQ_INPUT[@]}
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
-   cutadapt --cut -${n2} --minimum-length 15 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20 &
-   cutadapt --minimum-length 15 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 &
+   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20 &
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 &
    wait
    cat ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq &
 
   # Read2
   # remove UMI1 and ADD_B1 from the 3 prime end of R2
    n1=$[UMI1+ADD_B1]
-   cutadapt --cut -${n1} --minimum-length 15 ${TMPDIR}/${name}_trim_R2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq -q 20 &
-   cutadapt --minimum-length 15 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20 &
+   cutadapt --cut -${n1} --minimum-length=10 ${TMPDIR}/${name}_trim_R2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq -q 20 &
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20 &
    wait
    cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
 
@@ -647,17 +660,50 @@ if [[ ${#QC_INPUT} == 0 ]]; then
   exit 1
 fi
 
+if [[ ! -z "$mem" ]]; then #if -mem was given, use mem
+  for name in ${QC_INPUT}
+    do
+    ## Align using BWA.
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
+    samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+  done
+
+elif [[ ! -z "$aln" ]]; then # elif -aln was given, use aln
+ for name in ${QC_INPUT}
+  do
+  ## Align using BWA aln
+  bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+  bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+  bwa sampe -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz
+
+  samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+  rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${TMPDIR}/passQC/${name}_end.sam
+  done
+
+else #defaul use mem
+  for name in ${QC_INPUT}
+    do
+    ## Align using BWA.
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
+    samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+  done
+fi
+
+
 for name in ${QC_INPUT}
- do
-  ## Align using BWA.
-  bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
-	samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
-		
-  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
- done
+  do
+  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} &
+done
+wait
+
+
+
+
+
+
 
 ## Cleanup
-#find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
+find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
 
 #############################################
 ## Write out the bigWigs.
@@ -746,8 +792,8 @@ for name in ${FQ_INPUT[@]}
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
    n1=$[UMI1+ADD_B1]
-   cutadapt --cut -${n2} --minimum-length 15 ${TMPDIR}/${name}_trim.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved.fastq -q 20 &
-   cutadapt --minimum-length 15 ${TMPDIR}/${name}_untrim.fastq --output=${TMPDIR}/${name}_q20trim.fastq -q 20 &
+   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved.fastq -q 20 &
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim.fastq --output=${TMPDIR}/${name}_q20trim.fastq -q 20 &
    wait
    cat ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt.fastq &
 
@@ -806,13 +852,61 @@ if [[ ${#QC_INPUT} == 0 ]]; then
 fi
 
 if [[ -z "$DREG_MODEL" ]]; then
-  for name in ${QC_INPUT}
-    do
-    ## Align using BWA.
-    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
-    samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+  if [[ ! -z "$aln" ]]; then #use aln
+    for name in ${QC_INPUT}
+      do
+      ## Align using BWA aln
+      bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+      bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+      done
+    wait
+    for name in ${QC_INPUT}
+      do
+      samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      done
+    wait
+    for name in ${QC_INPUT}
+      do
+      rm ${TMPDIR}/passQC/${name}_end.sam
+      cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
     done
-else
+    wait
+
+  elif [[ ! -z "$mem" ]]; then #use mem
+    for name in ${QC_INPUT}
+      do
+      ## Align using BWA.
+      bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+      samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      done
+      wait
+    for name in ${QC_INPUT}
+      do
+      cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
+      done
+      wait
+
+  else #default use aln
+    for name in ${QC_INPUT}
+      do
+      ## Align using BWA aln
+      bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+      bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+      done
+    wait
+    for name in ${QC_INPUT}
+      do
+      samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      done
+    wait
+    for name in ${QC_INPUT}
+      do
+      rm ${TMPDIR}/passQC/${name}_end.sam
+      cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
+    done
+    wait
+ fi
+else #dREG
   echo "Aligning reads using the same parameters with dREG" 
   for name in ${QC_INPUT}
     do
@@ -829,17 +923,19 @@ else
     done
   
   wait
-
+  for name in ${QC_INPUT}
+   do
+   rm ${TMPDIR}/passQC/${name}_end.sam
+   cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
+   done
+   wait
 fi
 
 wait
 
-  cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} ## Saves the sorted BAM in the output file.
-
-
 
 ## Cleanup
-#find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
+find ${TMPDIR} -name "*.sort.bam" -size -1024k -delete
 
 
 #############################################
@@ -892,17 +988,17 @@ for f in ${TMPDIR}/*.sort.bam
 
 fi
 
-echo "QC" > ${OUTPUT}/proseq2.0_Run.log
+echo "QC" > ${OUTPUT}/proseq2.0_read_report_${tmp}.log
 for old_name in ${FQ_INPUT[@]}
  do
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
-  cat ${TMPDIR}/${name}.QC.log >> ${OUTPUT}/proseq2.0_Run.log
+  cat ${TMPDIR}/${name}.QC.log >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
  done
-echo "" >> ${OUTPUT}/proseq2.0_Run.log
-echo "Mapping" >> ${OUTPUT}/proseq2.0_Run.log
+echo "" >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
+echo "Mapping" >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
 for f in ${TMPDIR}/*.sort.bam
  do j=`echo $f | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- |rev `
- cat ${OUTPUT}/${j}.align.log >> ${OUTPUT}/proseq2.0_Run.log
+ cat ${OUTPUT}/${j}.align.log >> ${OUTPUT}/proseq2.0_read_report_${tmp}.log
  done
 
 
