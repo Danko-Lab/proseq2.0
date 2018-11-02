@@ -193,6 +193,6 @@ detect the transcriptional peaks, we use the "bwa aln" to do mappping and set lo
 Here is an examples to generate the bigWig for dREG.
 
 ```
-bash proseq2.0.bsh -SE -G -4DREG -i $dog_genome -c $dog_chinfo -I ./example1_R1.fastq.gz  -T ./tmpdir -O ./outputdir
+bash proseq2.0.bsh -SE -G -4DREG -i $dog_genome -c $dog_chinfo -I ./example1_R1  -T ./tmpdir -O ./outputdir
 ```
 
