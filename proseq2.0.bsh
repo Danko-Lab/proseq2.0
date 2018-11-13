@@ -612,6 +612,10 @@ for name in ${FQ_INPUT[@]}
   echo R2 >> ${TMPDIR}/${name}.QC.log
   cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
+  rm ${TMPDIR}/${name}_trim_R1.fastq ${TMPDIR}/${name}_untrim_R1.fastq ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq &
+  rm ${TMPDIR}/${name}_trim_R2.fastq ${TMPDIR}/${name}_untrim_R2.fastq ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq &
+  
+
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes or $Force_deduplicate=TRUE
   if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then # if there is UMI barcode, Will perform deduplicates with first ${dedup_L} bp
    # Remove PCR duplciates.
@@ -673,17 +677,14 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/passQC/${name}_QC_end_1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   fi
 
-
-  rm ${TMPDIR}/${name}_trim_R1.fastq ${TMPDIR}/${name}_untrim_R1.fastq ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq &
-  rm ${TMPDIR}/${name}_trim_R2.fastq ${TMPDIR}/${name}_untrim_R2.fastq ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq &
-
+  cat ${OUTPUT}/${name}.prinseq-pcrDups.gd
 
  done
 
 wait
 ## Cleanup.
-#rm -r ${TMPDIR}/noadapt 
-#gzip ${TMPDIR}/passQC/*.fastq 
+rm -r ${TMPDIR}/noadapt 
+gzip ${TMPDIR}/passQC/*.fastq 
 
 
 #############################################
@@ -897,6 +898,7 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/passQC/${name}_QC_end.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   fi
 
+  cat ${OUTPUT}/${name}.prinseq-pcrDups.gd
 
 
 
