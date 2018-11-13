@@ -170,7 +170,7 @@ bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -T myOutput4 -O myOutput4 -I P
 
 1. Setup your environment to use the bioinformatics tools (e.g. prinseq-lite.pl,bedGraphToBigWig,samtools...)
 ``` 
-export PATH=$PATH:/programs/prinseq-lite-0.20.2:/home/zw355/lib/ucsc:/programs
+export PATH=$PATH:/programs/prinseq-lite-0.20.2:/programs:/home/zw355/lib/bin:/home/zw355/lib/ucsc
 ```
 
 2. Find the BWA index and chromosome table in the server:
