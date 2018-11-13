@@ -16,6 +16,8 @@ To run our pipeline users must first download the pipeline files and install dep
 
 The pipelines depend on several common bioinformatics tools: 
 - [ ] cutadapt (https://cutadapt.readthedocs.io/en/stable/installation.html)
+- [ ] fastx_trimmer (http://hannonlab.cshl.edu/fastx_toolkit/commandline.html)
+- [ ] seqtk (https://github.com/lh3/seqtk)
 - [ ] prinseq-lite.pl (https://sourceforge.net/projects/prinseq/files/standalone/)
 - [ ] bwa (https://sourceforge.net/projects/bio-bwa/files/)
 - [ ] samtools (http://www.htslib.org/download/)
@@ -34,7 +36,7 @@ or *.fastq.gz in the current working directory as input and writes
 BAM and bigWig files as output to the user-assigned output-dir.
 
 Requirements in current working directory:
-cutadapt 1.8.3, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, and bedGraphToBigWig.
+cutadapt 1.8.3, fastx_trimmer, seqtk, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, and bedGraphToBigWig.
 
 bash proseq2.0.bsh [options]
 
@@ -107,7 +109,7 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 
 -4DREG             Using the pre-defined parameters to get the most reads
                    for dREG package. Please use this flag to make the bigWig
-                   files compatible with dREG algorithm.
+                   files compatible with dREG algorithm. [default: off]
 -aln               Use BWA-backtrack [default: SE uses BWA-backtrack, PE uses BWA-MEM]
 -mem               Use BWA-MEM [default: SE uses BWA-backtrack, PE uses BWA-MEM]
 
