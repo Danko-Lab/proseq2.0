@@ -620,11 +620,10 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq &
    cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq &
    wait
-   rm ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
    
    # deduplicate using the first dedup_L nt
    prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq -fastq2 ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
-   
+   rm ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq &
    # make a list of name from deduplicated fastq
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt &
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons_l${dedup_L}.txt &
@@ -818,6 +817,11 @@ echo " "
 echo "Preprocessing fastq files:"
 mkdir ${TMPDIR}/noadapt
 mkdir ${TMPDIR}/passQC
+if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+  dedup_L=30 
+  mkdir ${TMPDIR}/noadapt/l${dedup_L}
+  mkdir ${TMPDIR}/noadapt/l${dedup_L}_nodups
+fi
 
 for name in ${FQ_INPUT[@]}
  do
@@ -845,8 +849,35 @@ for name in ${FQ_INPUT[@]}
   cat ${TMPDIR}/noadapt/${name}_noadapt.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
 
+  rm ${TMPDIR}/${name}_trim.fastq ${TMPDIR}/${name}_untrim.fastq ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq
+  
+
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes
-  if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then 
+  if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+   # Remove PCR duplciates.
+   # fastq with the first dedup_L nt
+   cat ${TMPDIR}/noadapt/${name}_noadapt.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq 
+   # deduplicate using the first dedup_L nt
+   prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq
+
+   # make a list of name from deduplicated fastq
+   cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt
+   rm ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup.fastq
+
+   # generate fastq from the list of name
+   seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq 
+   rm ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt
+
+   # trim the UMI and additional barcode after dereplicate
+   prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   # min_len 15
+   prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/passQC/${name}_dedup_withBarcode.fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved.fastq
+   echo 'Number of reads after PCR duplicates removal and QC:' >> ${TMPDIR}/${name}.QC.log
+   cat ${TMPDIR}/passQC/${name}_dedup_QC_end.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  
+  elif [[ ${Force_deduplicate} == "TRUE" ]]; then 
    # Remove PCR duplciates.
    prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
@@ -867,8 +898,7 @@ for name in ${FQ_INPUT[@]}
   fi
 
 
-  rm ${TMPDIR}/${name}_trim.fastq ${TMPDIR}/${name}_untrim.fastq ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq
-  
+
 
  done
 
