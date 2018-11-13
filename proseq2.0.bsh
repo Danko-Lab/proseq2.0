@@ -565,6 +565,7 @@ echo "Preprocessing fastq files:"
 mkdir ${TMPDIR}/noadapt
 mkdir ${TMPDIR}/passQC
 if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then 
+  dedup_L=30 
   mkdir ${TMPDIR}/noadapt/l${dedup_L}
   mkdir ${TMPDIR}/noadapt/l${dedup_L}_nodups
 fi
@@ -614,8 +615,7 @@ for name in ${FQ_INPUT[@]}
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes or $Force_deduplicate=TRUE
   if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then # if there is UMI barcode, Will perform deduplicates with first ${dedup_L} bp
    # Remove PCR duplciates.
-   dedup_L=30 
-
+   
    # fastq with the first dedup_L nt
    cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq &
    cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq &
