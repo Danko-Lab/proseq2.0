@@ -84,9 +84,9 @@ while test $# -gt 0; do
     echo ""
     echo "-4DREG             Using the pre-defined parameters to get the most reads"
     echo "                   for dREG package. Please use this flag to make the bigWig"
-    echo "                   files compatible with dREG algorithm. [default: off]" 
-    echo "-aln               Use BWA-backtrack [default: SE uses BWA-backtrack, PE uses BWA-MEM]"
-    echo "-mem               Use BWA-MEM [default: SE uses BWA-backtrack, PE uses BWA-MEM]"
+    echo "                   files compatible with dREG algorithm. [default: off, only available to SE] " 
+    echo "-aln               Use BWA-backtrack [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]"
+    echo "-mem               Use BWA-MEM [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]"
 
 
 
