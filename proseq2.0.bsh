@@ -492,7 +492,7 @@ exec 2>&1
 ## Print out
 echo " " 
 echo "Processing PRO-seq data ..." 
-echo ${INPUT_LINE}
+echo "Command line parameters:" ${INPUT_LINE}
 echo " "
 
 if [[ ! -z "$DREG_MODEL" ]]; then
