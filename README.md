@@ -148,14 +148,14 @@ bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -T myOutput2 -O myOutput2 -
 
 __PREFIX_R1.fastq.gz__ and __PREFIX_R2.fastq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
 * Please note that Paired-end files require identical PREFIX and end with _R1.fastq.gz and _R2.fastq.gz.
-
   Assign the file use __-I PREFIX__. No _R1.fastq.gz, _R2.fastq.gz, nor *fastq.gz is in the end.
-* UMI1 and UMI2 were set to 0 by default. The pipeline will NOT remove PCR duplicates.
+* There is a 6N UMI barcode on R1. Pipeline will perform PCR deduplicat. 
 ```
-bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -T myOutput3 -O myOutput3 -I PREFIX
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --RNA3=R1_5prime -T myOutput3 -O myOutput3 -I PREFIX --UMI1=6 --ADAPT2=TGGAATTCTCGGGTGCCAAGG --ADAPT1=GATCGTCGGACTGTAGAACTCTGAAC
 ```
 ### Example 4
-Same as in Example 3 but with UMI barcode 4bp on the 5’ end and 2bp on the 3’ end of inserts. Pipeline will perform PCR deduplicat. 
+Same as in Example 3 but without UMI barcode. 
+* UMI1 and UMI2 were set to 0 by default. The pipeline will NOT remove PCR duplicates.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE -T myOutput4 -O myOutput4 -I PREFIX --UMI1=4 --UMI2=2
 ```
