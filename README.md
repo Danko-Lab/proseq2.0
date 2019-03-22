@@ -7,7 +7,7 @@ Currently we provide two commands: proseq mapper and bigWig merge.
 Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
 + pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
 + mapping reads to a reference genome (BWA)
-+ converting BAM files into bedGraph and BigWig formats (kentsource). When converting to bedGraph and BigWig, the pipeline only report the 5’ end position of the reads after UMI/adapter removal. For pair-end sequencing, user can choose to report the 5’ end of R1 or R2 reads.
++ converting BAM files into bedGraph and BigWig formats (kentsource). When converting to bedGraph and BigWig, the pipeline only report the 5’ end position of the reads after UMI/adapter removal. For pair-end sequencing, user can choose to report the 5’ end of R1 or R2 reads. The output BigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization. The RPM normalized outputs end with a suffix of .rpm.bw.
 
 To run our pipeline users must first download the pipeline files and install dependencies indicated in this README.md. In addition, user need to provide a path to a BWA index file and the path to the chromInfo file for the genome of choice. After running this pipeline, users should have processed data files in the specified output directory.
 
@@ -34,6 +34,9 @@ Preprocesses and aligns PRO-seq data.
 Takes PREFIX.fastq.gz (SE),  PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz (PE)
 or *.fastq.gz in the current working directory as input and writes
 BAM and bigWig files as output to the user-assigned output-dir.
+The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization. 
+The RPM normalized outputs end with a suffix of .rpm.bw.
+
 
 Requirements in current working directory:
 cutadapt 1.8.3, fastx_trimmer, seqtk, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, and bedGraphToBigWig.
