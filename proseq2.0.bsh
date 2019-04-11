@@ -90,6 +90,9 @@ while test $# -gt 0; do
     echo "                   files compatible with dREG algorithm. [default: off, only available to SE] " 
     echo "-aln               Use BWA-backtrack [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]"
     echo "-mem               Use BWA-MEM [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]"
+    echo "--MAP_LENGTH       Set a data-set wide length cutoff for mapping (e.g. --MAP_LENGTH=36) "
+    echo "                   or map the whole reads after QC (off, --MAP_LENGTH=0). [default: off]"
+    
 
 
 
