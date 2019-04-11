@@ -271,6 +271,10 @@ while test $# -gt 0; do
                         export aln=1
                         shift
                         ;;
+                --MAP_LENGTH*)
+                        export map_L=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
                 *)
                         break
                         ;;
@@ -438,7 +442,9 @@ fi
 if [ -z "$ADD_B2" ]; then
    ADD_B2=0
 fi
-
+if [ -z "$map_L" ]; then
+   map_L=0
+fi
 
 if [[ "$SEQ" == "PE" ]]; then
   if [[ -z "$RNA5" && -z "$RNA3" ]]; then
@@ -553,7 +559,9 @@ if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then
 else
  echo "Remove PCR duplicates     FALSE"
 fi
-
+if [[ ${map_L} != 0 ]]; then
+ echo "Trim Read length to ${map_L}nt for mapping"
+fi
 
 ## Exits .. for debugging.
 #exit 1
@@ -714,7 +722,7 @@ if [[ ! -z "$mem" ]]; then #if -mem was given, use mem
   for name in ${QC_INPUT}
     do
     ## Align using BWA.
-    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz | \
     samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
   done
 
@@ -722,19 +730,19 @@ elif [[ ! -z "$aln" ]]; then # elif -aln was given, use aln
  for name in ${QC_INPUT}
   do
   ## Align using BWA aln
-  bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
-  bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
-  bwa sampe -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz
+  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+  bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz
 
-  samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
-  rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${TMPDIR}/passQC/${name}_end.sam
+  samtools view -b -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
+  rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_end.sam
   done
 
 else #defaul use mem
   for name in ${QC_INPUT}
     do
     ## Align using BWA.
-    bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_1.fastq.gz ${TMPDIR}/passQC/${name}_2.fastq.gz | \
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz | \
     samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
   done
 fi
@@ -914,15 +922,24 @@ for name in ${FQ_INPUT[@]}
   fi
 
   cat ${OUTPUT}/${name}.prinseq-pcrDups.gd
+  wait
+done
 
+# if there is a data-set wide length cutoff map_L
+if [[ ${map_L} != 0 ]]; then
+   mkdir ${TMPDIR}/passQC_length_${map_L}
+   for f in ${TMPDIR}/passQC/*_QC_end.fastq
+    do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 3-|rev`
+    cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end.fastq &
+   done
+   wait
+fi 
 
-
- done
 
 wait
 ## Cleanup.
 rm -r ${TMPDIR}/noadapt 
-gzip ${TMPDIR}/passQC/*.fastq 
+gzip ${TMPDIR}/passQC*/*.fastq 
 
 
 #############################################
@@ -930,7 +947,14 @@ gzip ${TMPDIR}/passQC/*.fastq
 echo " "
 echo "Mapping reads:"
 
-QC_INPUT=`ls  ${TMPDIR}/passQC/*_QC_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
+if [[ ${map_L} != 0 ]]; then 
+   ToMapDir=${TMPDIR}/passQC_length_${map_L}
+else
+   ToMapDir=${TMPDIR}/passQC
+fi
+echo "Reads for mapping is from :       $ToMapDir"
+
+QC_INPUT=`ls  ${ToMapDir}/*_QC_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
@@ -946,18 +970,18 @@ if [[ -z "$DREG_MODEL" ]]; then
     for name in ${QC_INPUT}
       do
       ## Align using BWA aln
-      bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
-      bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+      bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
+      bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz &
       done
     wait
     for name in ${QC_INPUT}
       do
-      samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      samtools view -b -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
     wait
     for name in ${QC_INPUT}
       do
-      rm ${TMPDIR}/passQC/${name}_end.sam
+      rm ${ToMapDir}/${name}_end.sam
       cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
     done
     wait
@@ -966,7 +990,7 @@ if [[ -z "$DREG_MODEL" ]]; then
     for name in ${QC_INPUT}
       do
       ## Align using BWA.
-      bwa mem -k 19 -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
+      bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
       samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
       wait
@@ -980,18 +1004,18 @@ if [[ -z "$DREG_MODEL" ]]; then
     for name in ${QC_INPUT}
       do
       ## Align using BWA aln
-      bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
-      bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+      bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
+      bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz &
       done
     wait
     for name in ${QC_INPUT}
       do
-      samtools view -b -q 20 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+      samtools view -b -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
     wait
     for name in ${QC_INPUT}
       do
-      rm ${TMPDIR}/passQC/${name}_end.sam
+      rm ${ToMapDir}/${name}_end.sam
       cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
     done
     wait
@@ -1001,21 +1025,21 @@ else #dREG
   for name in ${QC_INPUT}
     do
     ## Align using BWA aln , same as the original dreg model.
-    bwa aln -t ${thread} ${BWAIDX} ${TMPDIR}/passQC/${name}_end.fastq.gz | \
-    bwa samse -n 1 -f ${TMPDIR}/passQC/${name}_end.sam ${BWAIDX} - ${TMPDIR}/passQC/${name}_end.fastq.gz &
+    bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
+    bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz &
     done
   
   wait
 
   for name in ${QC_INPUT}
     do
-    samtools view -b -q 0 ${TMPDIR}/passQC/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
+    samtools view -b -q 0 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
     done
   
   wait
   for name in ${QC_INPUT}
    do
-   rm ${TMPDIR}/passQC/${name}_end.sam
+   rm ${ToMapDir}/${name}_end.sam
    cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
    done
    wait
