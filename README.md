@@ -117,6 +117,8 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
                    files compatible with dREG algorithm. [default: off]
 -aln               Use BWA-backtrack [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]
 -mem               Use BWA-MEM [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]
+--MAP_LENGTH       Set a data-set wide length cutoff for mapping (e.g. --MAP_LENGTH=36)
+                   or map the whole reads after QC (off, --MAP_LENGTH=0). [default: off]
 
 ```
 <img src="images/lib.png">
