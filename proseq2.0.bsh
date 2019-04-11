@@ -697,9 +697,24 @@ for name in ${FQ_INPUT[@]}
  done
 
 wait
+# if there is a data-set wide length cutoff map_L
+if [[ ${map_L} != 0 ]]; then
+   mkdir ${TMPDIR}/passQC_length_${map_L}
+   for f in ${TMPDIR}/passQC/*_QC_end_1.fastq
+    do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 4-|rev`
+    cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_1.fastq &
+   done
+   for f in ${TMPDIR}/passQC/*_QC_end_2.fastq
+    do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 4-|rev`
+    cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_2.fastq &
+   done
+   wait
+fi 
+
+wait
 ## Cleanup.
 rm -r ${TMPDIR}/noadapt 
-gzip ${TMPDIR}/passQC/*.fastq 
+gzip ${TMPDIR}/passQC*/*.fastq 
 
 
 #############################################
@@ -707,7 +722,14 @@ gzip ${TMPDIR}/passQC/*.fastq
 echo " "
 echo "Mapping reads:"
 
-QC_INPUT=`ls  ${TMPDIR}/passQC/*_QC_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
+if [[ ${map_L} != 0 ]]; then 
+   ToMapDir=${TMPDIR}/passQC_length_${map_L}
+else
+   ToMapDir=${TMPDIR}/passQC
+fi
+echo "Reads for mapping is from :       $ToMapDir"
+
+QC_INPUT=`ls  ${ToMapDir}/*_QC_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
