@@ -22,8 +22,8 @@ The pipelines depend on several common bioinformatics tools:
 - [ ] seqtk (https://github.com/lh3/seqtk)
 - [ ] prinseq-lite.pl (https://sourceforge.net/projects/prinseq/files/standalone/)
 - [ ] bwa (https://sourceforge.net/projects/bio-bwa/files/)
-- [ ] samtools (http://www.htslib.org/download/)
-- [ ] bedtools (http://bedtools.readthedocs.org/en/latest/)
+- [ ] samtools version: 1.9 (http://www.htslib.org/download/)
+- [ ] bedtools v2.28.0 (http://bedtools.readthedocs.org/en/latest/)
 - [ ] bedops (http://bedops.readthedocs.org/en/latest/index.html)
 - [ ] bedGraphToBigWig (from the Kent source utilities http://hgdownload.cse.ucsc.edu/admin/exe/)
 
