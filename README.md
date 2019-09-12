@@ -168,6 +168,12 @@ Same as in Example 3 but without UMI barcode.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --RNA3=R1_5prime -T myOutput4 -O myOutput4 -I PREFIX --ADAPT1=GATCGTCGGACTGTAGAACTCTGAAC --ADAPT2=TGGAATTCTCGGGTGCCAAGG
 ```
+### Example 5
+If you made ChRO-seq library with High-throughput Adapters from Danko lab __AND all the samples have distinct i7 barcode.__
+* Please note that proseq2.0.bsh does __NOT__ work if there your samples share i7 barcode.
+```
+bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --UMI1=4 --UMI2=4 --ADD_B1=6 -T myOutput5 -O myOutput5 -I PREFIX
+```
 
 ## Useful references
 
