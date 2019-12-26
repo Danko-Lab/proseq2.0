@@ -115,7 +115,8 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 
 -4DREG             Using the pre-defined parameters to get the most reads
                    for dREG package. Please use this flag to make the bigWig
-                   files compatible with dREG algorithm. [default: off]
+                   files compatible with dREG algorithm. Only available for 
+                   Single-end sequencing.[default: off]
 -aln               Use BWA-backtrack [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]
 -mem               Use BWA-MEM [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]
 --MAP_LENGTH       Set a data-set wide length cutoff for mapping (e.g. --MAP_LENGTH=36)
@@ -205,7 +206,7 @@ export dog_chinfo=/local/storage/data/canFam3/canFam3.chromInfo
 ## Notes for **dREG** users:
 
 In order to make the most compatible with dREG algorithm, please use **-4DREG** flag when you process the PRO-seq and GRO-seq reads. The dREG package needs enriched reads to 
-detect the transcriptional peaks, we use the "bwa aln" to do mappping and set lower filtering score (0) to get the most reads in this pipeline. 
+detect the transcriptional peaks, we use the "bwa aln" to do mappping and set lower filtering score (0) to get the most reads in this pipeline. Only available for Single-end sequencing.
 
 Here is an examples to generate the bigWig for dREG.
 
