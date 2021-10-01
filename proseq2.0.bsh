@@ -11,7 +11,7 @@ while test $# -gt 0; do
     echo "or *.fastq.gz in the current working directory as input and writes" 
     echo "BAM and bigWig files as output to the user-assigned output-dir."
     echo "The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization." 
-    ehco "The RPM normalized outputs end with a suffix of .rpm.bw."
+    echo "The RPM normalized outputs end with a suffix of .rpm.bw."
     echo ""
     echo "Requirements in current working directory:"
     echo "cutadapt 1.8.3, fastx_trimmer, seqtk, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, and bedGraphToBigWig."
