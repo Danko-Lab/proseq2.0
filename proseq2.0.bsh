@@ -7,7 +7,7 @@ while test $# -gt 0; do
     echo ""
     echo "Preprocesses and aligns PRO-seq data."
     echo ""
-    echo "Takes PREFIX.fastq.gz (SE),  PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz (PE)"
+    echo "Takes PREFIX.fastq.gz (SE),  PREFIX_1.fastq.gz, PREFIX_2.fastq.gz (PE)"
     echo "or *.fastq.gz in the current working directory as input and writes" 
     echo "BAM and bigWig files as output to the user-assigned output-dir."
     echo "The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization." 
@@ -33,8 +33,8 @@ while test $# -gt 0; do
     echo "I/O options:"
     echo "-I, --fastq=PREFIX     Prefix for input files."
     echo "                       Paired-end files require identical prefix"
-    echo "                       and end with _R1.fastq.gz and _R2.fastq.gz"
-    echo "                       eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz."
+    echo "                       and end with _1.fastq.gz and _2.fastq.gz"
+    echo "                       eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz."
     echo "-T, --tmp=PATH         Path to a temporary storage directory."
     echo "-O, --output-dir=DIR   Specify a directory to store output in."
     echo ""
@@ -332,17 +332,17 @@ if [[ "$SEQ" == "PE" ]] ; then
     FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
   fi
 
-  ## Check if input file end with _R1.fastq.gz or _R2.fastq.gz
+  ## Check if input file end with _1.fastq.gz or _2.fastq.gz
   tmp=${FQ_INPUT}
   FQ_INPUT=() #array
   for name in ${tmp}
   do 
-    if [ ! -f ${name}_R1.fastq.gz ]; then
+    if [ ! -f ${name}_1.fastq.gz ]; then
       echo ""
       echo "##################################################################################"
-      echo " File ${name}_R1.fastq.gz was not found! Skip ${name}*.fastq.gz from analysis."
-      echo " Paired-end files require identical prefix and end with _R1.fastq.gz and _R2.fastq.gz"
-      echo " eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz"
+      echo " File ${name}_1.fastq.gz was not found! Skip ${name}*.fastq.gz from analysis."
+      echo " Paired-end files require identical prefix and end with _1.fastq.gz and _2.fastq.gz"
+      echo " eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz"
       echo " Please make sure you have the correct file suffix!                           " 
       echo "##################################################################################"
       echo ""
@@ -388,8 +388,8 @@ fi
 if [[ ${#FQ_INPUT[@]} == 0 ]]; then  # if the length of array is 0
   echo "##################################################################################"
   echo " No files is in the correct format."
-  echo " Paired-end files require identical prefix and end with _R1.fastq.gz and _R2.fastq.gz"
-  echo " eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz"
+  echo " Paired-end files require identical prefix and end with _1.fastq.gz and _2.fastq.gz"
+  echo " eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz"
   echo " Please make sure you have the correct file suffix! Aborting."
   echo "##################################################################################"
   exit 1
@@ -554,7 +554,7 @@ if [[ "$SEQ" == "PE" ]]; then
 i=1
 for name in ${FQ_INPUT[@]}
   do 
-echo "input file pair $i         ${name}_R1.fastq.gz, ${name}_R2.fastq.gz"
+echo "input file pair $i         ${name}_1.fastq.gz, ${name}_2.fastq.gz"
   let "i++"
 done
 fi
@@ -607,44 +607,44 @@ for name in ${FQ_INPUT[@]}
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
   ## read stats
   echo 'Number of original input reads:' > ${TMPDIR}/${name}.QC.log
-  echo ${old_name}_R1.fastq.gz >> ${TMPDIR}/${name}.QC.log
-  zcat ${old_name}_R1.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
-  echo ${old_name}_R2.fastq.gz >> ${TMPDIR}/${name}.QC.log
-  zcat ${old_name}_R2.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  echo ${old_name}_1.fastq.gz >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}_1.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  echo ${old_name}_2.fastq.gz >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}_2.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
 
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${old_name}_R1.fastq.gz &
-  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${old_name}_R2.fastq.gz &
+  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_1.fastq ${old_name}_1.fastq.gz &
+  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_2.fastq ${old_name}_2.fastq.gz &
   wait
 
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
-   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20 &
-   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 &
+   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_1.fastq -q 20 &
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_1.fastq --output=${TMPDIR}/${name}_q20trim_1.fastq -q 20 &
    wait
-   cat ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq &
+   cat ${TMPDIR}/${name}_q20trim_1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_1.fastq &
 
   # Read2
   # remove UMI1 and ADD_B1 from the 3 prime end of R2
    n1=$[UMI1+ADD_B1]
-   cutadapt --cut -${n1} --minimum-length=10 ${TMPDIR}/${name}_trim_R2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq -q 20 &
-   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20 &
+   cutadapt --cut -${n1} --minimum-length=10 ${TMPDIR}/${name}_trim_2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_2.fastq -q 20 &
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_2.fastq --output=${TMPDIR}/${name}_q20trim_2.fastq -q 20 &
    wait
-   cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
+   cat ${TMPDIR}/${name}_q20trim_2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_2.fastq &
 
   wait
   echo 'Number of reads after adapter removal and QC:' >> ${TMPDIR}/${name}.QC.log
   echo R1 >> ${TMPDIR}/${name}.QC.log
-  cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt_1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   echo R2 >> ${TMPDIR}/${name}.QC.log
-  cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  cat ${TMPDIR}/noadapt/${name}_noadapt_2.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
-  rm ${TMPDIR}/${name}_trim_R1.fastq ${TMPDIR}/${name}_untrim_R1.fastq ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq &
-  rm ${TMPDIR}/${name}_trim_R2.fastq ${TMPDIR}/${name}_untrim_R2.fastq ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq &
+  rm ${TMPDIR}/${name}_trim_1.fastq ${TMPDIR}/${name}_untrim_1.fastq ${TMPDIR}/${name}_q20trim_1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_1.fastq &
+  rm ${TMPDIR}/${name}_trim_2.fastq ${TMPDIR}/${name}_untrim_2.fastq ${TMPDIR}/${name}_q20trim_2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_2.fastq &
   
 
   ## Collapse reads using prinseq-lite.pl. if there are UMI barcodes or $Force_deduplicate=TRUE
@@ -652,13 +652,13 @@ for name in ${FQ_INPUT[@]}
    # Remove PCR duplciates.
    
    # fastq with the first dedup_L nt
-   cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq &
-   cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq &
+   cat ${TMPDIR}/noadapt/${name}_noadapt_1.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_1.fastq &
+   cat ${TMPDIR}/noadapt/${name}_noadapt_2.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_2.fastq &
    wait
    
    # deduplicate using the first dedup_L nt
-   prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq -fastq2 ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
-   rm ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq &
+   prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_1.fastq -fastq2 ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_2.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   rm ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_1.fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_2.fastq &
    # make a list of name from deduplicated fastq
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt &
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons_l${dedup_L}.txt &
@@ -667,10 +667,10 @@ for name in ${FQ_INPUT[@]}
    rm ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons.fastq
 
    # generate fastq from the list of name
-    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq &
-    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq &
-    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_1_singletons.fastq &
-    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_2_singletons.fastq &
+    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq &
+    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_2.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq &
+    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_1_singletons.fastq &
+    seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_2.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_2_singletons.fastq &
     wait
     rm ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup*l${dedup_L}.txt &
      
@@ -687,7 +687,7 @@ for name in ${FQ_INPUT[@]}
 
   elif [[ ${Force_deduplicate} == "TRUE" ]]; then # if there is NO UMI barcode, Will perform deduplicates with whole legnth of reads
    # Remove PCR duplciates.
-   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -fastq2 ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -derep 1 -fastq ${TMPDIR}/noadapt/${name}_noadapt_1.fastq -fastq2 ${TMPDIR}/noadapt/${name}_noadapt_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_withBarcode 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # trim the UMI and additional barcode after dereplicate
    prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    prinseq-lite.pl -trim_left ${n2} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -699,8 +699,8 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/passQC/${name}_dedup_QC_end_1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
   else
    # trim the additional barcode ${ADD_B1} and ${ADD_B2} WITHOUT dereplicate. If no barcode, prinseq-lite.pl will remove unpair reads and reads that are length 0
-   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
-   prinseq-lite.pl -trim_left ${ADD_B2} -fastq ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${ADD_B1} -fastq ${TMPDIR}/noadapt/${name}_noadapt_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
+   prinseq-lite.pl -trim_left ${ADD_B2} -fastq ${TMPDIR}/noadapt/${name}_noadapt_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    # min_len 15
    prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_QC_end 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/passQC/${name}_BarcodeRemoved_1.fastq ${TMPDIR}/passQC/${name}_BarcodeRemoved_2.fastq
