@@ -7,8 +7,8 @@ while test $# -gt 0; do
     echo ""
     echo "Preprocesses and aligns PRO-seq data."
     echo ""
-    echo "Takes PREFIX.fastq.gz (SE),  PREFIX_1.fastq.gz, PREFIX_2.fastq.gz (PE)"
-    echo "or *.fastq.gz in the current working directory as input and writes" 
+    echo "Takes PREFIX.fq.gz (SE),  PREFIX_1.fq.gz, PREFIX_2.fq.gz (PE)"
+    echo "or *.fq.gz in the current working directory as input and writes"
     echo "BAM and bigWig files as output to the user-assigned output-dir."
     echo "The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization." 
     echo "The RPM normalized outputs end with a suffix of .rpm.bw."
@@ -33,8 +33,8 @@ while test $# -gt 0; do
     echo "I/O options:"
     echo "-I, --fastq=PREFIX     Prefix for input files."
     echo "                       Paired-end files require identical prefix"
-    echo "                       and end with _1.fastq.gz and _2.fastq.gz"
-    echo "                       eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz."
+    echo "                       and end with _1.fq.gz and _2.fq.gz"
+    echo "                       eg: PREFIX_1.fq.gz, PREFIX_2.fq.gz."
     echo "-T, --tmp=PATH         Path to a temporary storage directory."
     echo "-O, --output-dir=DIR   Specify a directory to store output in."
     echo ""
@@ -324,25 +324,25 @@ if [[ "$SEQ" == "PE" ]] ; then
   fi
 
 
-  if [[ "$FQ_INPUT" == "*.fastq.gz" ]]; then
-    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
+  if [[ "$FQ_INPUT" == "*.fq.gz" ]]; then
+    FQ_INPUT=`ls *.fq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
   fi
   if [ -z "$FQ_INPUT" ]; then
-    echo "No input files specified.  Using *.fastq.gz"
-    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
+    echo "No input files specified.  Using *.fq.gz"
+    FQ_INPUT=`ls *.fq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| cut -d _ -f 2- |rev | sort | uniq`
   fi
 
-  ## Check if input file end with _1.fastq.gz or _2.fastq.gz
+  ## Check if input file end with _1.fq.gz or _2.fq.gz
   tmp=${FQ_INPUT}
   FQ_INPUT=() #array
   for name in ${tmp}
   do 
-    if [ ! -f ${name}_1.fastq.gz ]; then
+    if [ ! -f ${name}_1.fq.gz ]; then
       echo ""
       echo "##################################################################################"
-      echo " File ${name}_1.fastq.gz was not found! Skip ${name}*.fastq.gz from analysis."
-      echo " Paired-end files require identical prefix and end with _1.fastq.gz and _2.fastq.gz"
-      echo " eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz"
+      echo " File ${name}_1.fq.gz was not found! Skip ${name}*.fq.gz from analysis."
+      echo " Paired-end files require identical prefix and end with _1.fq.gz and _2.fq.gz"
+      echo " eg: PREFIX_1.fq.gz, PREFIX_2.fq.gz"
       echo " Please make sure you have the correct file suffix!                           " 
       echo "##################################################################################"
       echo ""
@@ -369,12 +369,12 @@ elif [[ "$SEQ" == "SE" ]] ; then
   echo "Please specify output format for SE [-G or -P]"
   exit 1
   fi
-  if [[ "$FQ_INPUT" == "*.fastq.gz" ]]; then
-    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
+  if [[ "$FQ_INPUT" == "*.fq.gz" ]]; then
+    FQ_INPUT=`ls *.fq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
   elif [ -z "$FQ_INPUT" ]; then
-    echo "No input files specified.  Using *.fastq.gz"
-    FQ_INPUT=`ls *.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
-  elif [[ "$FQ_INPUT" == *.fastq.gz ]]; then
+    echo "No input files specified.  Using *.fq.gz"
+    FQ_INPUT=`ls *.fq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3-| rev`
+  elif [[ "$FQ_INPUT" == *.fq.gz ]]; then
     FQ_INPUT=`echo $FQ_INPUT | rev | cut -d \. -f 3-| rev`
   fi
 else
@@ -388,8 +388,8 @@ fi
 if [[ ${#FQ_INPUT[@]} == 0 ]]; then  # if the length of array is 0
   echo "##################################################################################"
   echo " No files is in the correct format."
-  echo " Paired-end files require identical prefix and end with _1.fastq.gz and _2.fastq.gz"
-  echo " eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz"
+  echo " Paired-end files require identical prefix and end with _1.fq.gz and _2.fq.gz"
+  echo " eg: PREFIX_1.fq.gz, PREFIX_2.fq.gz"
   echo " Please make sure you have the correct file suffix! Aborting."
   echo "##################################################################################"
   exit 1
@@ -546,7 +546,7 @@ if [[ "$SEQ" == "SE" ]]; then
 i=1
 for name in ${FQ_INPUT[@]}
   do 
-echo "input file $i              ${name}.fastq.gz"
+echo "input file $i              ${name}.fq.gz"
   let "i++"
 done
 fi
@@ -554,7 +554,7 @@ if [[ "$SEQ" == "PE" ]]; then
 i=1
 for name in ${FQ_INPUT[@]}
   do 
-echo "input file pair $i         ${name}_1.fastq.gz, ${name}_2.fastq.gz"
+echo "input file pair $i         ${name}_1.fq.gz, ${name}_2.fq.gz"
   let "i++"
 done
 fi
@@ -607,17 +607,17 @@ for name in ${FQ_INPUT[@]}
   name=`echo ${old_name} | rev | cut -d \/ -f 1 |rev`
   ## read stats
   echo 'Number of original input reads:' > ${TMPDIR}/${name}.QC.log
-  echo ${old_name}_1.fastq.gz >> ${TMPDIR}/${name}.QC.log
-  zcat ${old_name}_1.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
-  echo ${old_name}_2.fastq.gz >> ${TMPDIR}/${name}.QC.log
-  zcat ${old_name}_2.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  echo ${old_name}_1.fq.gz >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}_1.fq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  echo ${old_name}_2.fq.gz >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}_2.fq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
 
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_1.fastq ${old_name}_1.fastq.gz &
-  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_2.fastq ${old_name}_2.fastq.gz &
+  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_1.fastq ${old_name}_1.fq.gz &
+  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_2.fastq ${old_name}_2.fq.gz &
   wait
 
   # Read1
@@ -743,12 +743,12 @@ else
 fi
 echo "Reads for mapping is from :       $ToMapDir"
 
-QC_INPUT=`ls  ${ToMapDir}/*_QC_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
+QC_INPUT=`ls  ${ToMapDir}/*_QC_end_1.fq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
   echo " Something went wrong with Preprocess."
-  echo " No fastq.gz files passed."
+  echo " No fq.gz files passed."
   echo " Aborting."
   echo "#########################################"
   exit 1
@@ -762,9 +762,9 @@ if [[ ! -z "$PREMAP_BWAIDX" ]]; then
     if [[ ! -z "$aln" ]]; then
         for name in ${QC_INPUT}
         do
-            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
-            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
-            bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz
+            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_1.fq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_2.fq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+            bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fq.gz ${ToMapDir}/${name}_2.fq.gz
             samtools view -bF 0x2 ${ToMapDir}/${name}_end.sam| samtools sort -n -@ 1 - > ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
             rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_end.sam
             bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq -fq2 ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq 
@@ -774,7 +774,7 @@ if [[ ! -z "$PREMAP_BWAIDX" ]]; then
     else #defaul use mem
       for name in ${QC_INPUT}
         do
-        bwa mem -k 19 -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz |\
+        bwa mem -k 19 -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_1.fq.gz ${ToMapDir}/${name}_2.fq.gz |\
         samtools view -bF 0x2 | samtools sort -n -@ 1 - > ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
         bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq -fq2 ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq 
         gzip ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq 
@@ -795,9 +795,9 @@ if [[ ! -z "$aln" ]]; then # elif -aln was given, use aln
  for name in ${QC_INPUT}
   do
   ## Align using BWA aln
-  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
-  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
-  bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz
+  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_2.fq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+  bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fq.gz ${ToMapDir}/${name}_2.fq.gz
 
   samtools view -bf 0x2 -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
   rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_end.sam
@@ -806,7 +806,7 @@ else #defaul use mem
   for name in ${QC_INPUT}
     do
     ## Align using BWA.
-    bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz | \
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fq.gz ${ToMapDir}/${name}_2.fq.gz | \
     samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
   done
 fi
@@ -918,11 +918,11 @@ for name in ${FQ_INPUT[@]}
   ## read stats
   echo ${old_name} >  ${TMPDIR}/${name}.QC.log
   echo 'Number of original input reads:' >> ${TMPDIR}/${name}.QC.log
-  zcat ${old_name}.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
+  zcat ${old_name}.fq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT_SE} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${old_name}.fastq.gz
+  cutadapt -a ${ADAPT_SE} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${old_name}.fq.gz
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
@@ -1016,12 +1016,12 @@ else
    ToMapDir=${TMPDIR}/passQC
 fi
 
-QC_INPUT=`ls  ${ToMapDir}/*_QC_end.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
+QC_INPUT=`ls  ${ToMapDir}/*_QC_end.fq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
   echo " Something went wrong with Preprocess."
-  echo " No fastq.gz files passed."
+  echo " No fq.gz files passed."
   echo " Aborting."
   echo "#########################################"
   exit 1
@@ -1034,20 +1034,20 @@ if [[ ! -z "$PREMAP_BWAIDX" ]]; then
    if [[ ! -z "$mem" ]]; then
       for name in ${QC_INPUT}
         do
-        bwa mem -k 19 -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_end.fastq.gz |\
+        bwa mem -k 19 -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_end.fq.gz |\
         samtools view -bf 0x4 | samtools sort -n -@ 1 - > ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
-        bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_end.fastq.gz 
-        gzip ${TMPDIR}/Unmapped_to_premap/${name}_end.fastq.gz
+        bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_end.fq.gz
+        gzip ${TMPDIR}/Unmapped_to_premap/${name}_end.fq.gz
         rm ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
      done
     else # default use aln
         for name in ${QC_INPUT}
         do
-        echo "    bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_end.fastq.gz  | \
-            bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz"
+        echo "    bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_end.fq.gz  | \
+            bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} - ${ToMapDir}/${name}_end.fq.gz"
 
-            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_end.fastq.gz  | \
-            bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz
+            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_end.fq.gz  | \
+            bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} - ${ToMapDir}/${name}_end.fq.gz
             samtools view -bf 0x4 ${ToMapDir}/${name}_end.sam| samtools sort -n -@ 1 - > ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
             rm ${ToMapDir}/${name}_end.sam
             bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_end.fastq 
@@ -1069,7 +1069,7 @@ if [[ -z "$DREG_MODEL" ]]; then
     for name in ${QC_INPUT}
       do
       ## Align using BWA.
-      bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
+      bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
       samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
       wait
@@ -1082,11 +1082,11 @@ if [[ -z "$DREG_MODEL" ]]; then
     for name in ${QC_INPUT}
       do
       ## Align using BWA aln
-echo "bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
-      bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz "
+echo "bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
+      bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fq.gz "
 
-      bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
-      bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz &
+      bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
+      bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fq.gz &
     done
     wait
     for name in ${QC_INPUT}
@@ -1107,8 +1107,8 @@ else #dREG
   for name in ${QC_INPUT}
     do
     ## Align using BWA aln , same as the original dreg model.
-    bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fastq.gz | \
-    bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fastq.gz &
+    bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
+    bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fq.gz &
     done
   
   wait
