@@ -5,10 +5,10 @@ Currently we provide two commands: proseq mapper and bigWig merge.
 
 # NOVOGENE MODIFICATION:
 
-**Novogene paired end files are named PREFIX_1.fastq.gz and PREFIX_2.fastq.gz. This fork changes the references in proseq2.0.bsh to use this standard.**
+**Novogene paired end files are named PREFIX_1.fq.gz and PREFIX_2.fq.gz. This fork changes the references in proseq2.0.bsh to use this standard.**
 
 ## Overview
-Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
+Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
 + pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
 + mapping reads to a reference genome (BWA)
 + converting BAM files into bedGraph and BigWig formats (kentsource). When converting to bedGraph and BigWig, the pipeline only report the 5’ end position of the reads after UMI/adapter removal. For pair-end sequencing, user can choose to report the 5’ end of R1 or R2 reads. The output BigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization. The RPM normalized outputs end with a suffix of .rpm.bw.
@@ -38,8 +38,8 @@ Please make sure you can call the bioinformatics tools from your current working
 ```
 Preprocesses and aligns PRO-seq data.
 
-Takes PREFIX.fastq.gz (SE),  PREFIX_1.fastq.gz, PREFIX_2.fastq.gz (PE)
-or *.fastq.gz in the current working directory as input and writes
+Takes PREFIX.fq.gz (SE),  PREFIX_1.fq.gz, PREFIX_2.fq.gz (PE)
+or *.fq.gz in the current working directory as input and writes
 BAM and bigWig files as output to the user-assigned output-dir.
 The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization.
 The RPM normalized outputs end with a suffix of .rpm.bw.
@@ -65,8 +65,8 @@ Required options:
 I/O options:
 -I, --fastq=PREFIX     Prefix for input files.
                        Paired-end files require identical prefix
-                       and end with _1.fastq.gz and _2.fastq.gz
-                       eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz.
+                       and end with _1.fq.gz and _2.fq.gz
+                       eg: PREFIX_1.fq.gz, PREFIX_2.fq.gz.
 -T, --tmp=PATH         Path to a temporary storage directory.
 -O, --output-dir=DIR   Specify a directory to store output in.
 
@@ -145,24 +145,24 @@ export chromInfo=PathToChromInfo
 
 ### Example 1
 
-PREFIX.fastq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941
+PREFIX.fq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941
 Give UMI1=6, the pipeline will remove PCR duplicates and trim the 6bp UMI barcode.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -G -T myOutput1 -O myOutput1 --UMI1=6 -I PREFIX
 ```
 ### Example 2
 
-PREFIX.fastq.gz were made according to PRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/23430654
+PREFIX.fq.gz were made according to PRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/23430654
 UMI1 was set to 0 by default. The pipeline will NOT remove PCR duplicates.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -T myOutput2 -O myOutput2 -I PREFIX
 ```
 ### Example 3
 
-__PREFIX_1.fastq.gz__ and __PREFIX_2.fastq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
-* Please note that Paired-end files require identical PREFIX and end with _1.fastq.gz and _2.fastq.gz.
+__PREFIX_1.fq.gz__ and __PREFIX_2.fq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
+* Please note that Paired-end files require identical PREFIX and end with _1.fq.gz and _2.fq.gz.
 
-  Assign the file use __-I PREFIX__. No _1.fastq.gz, _2.fastq.gz, nor *fastq.gz is in the end.
+  Assign the file use __-I PREFIX__. No _1.fq.gz, _2.fq.gz, nor *fq.gz is in the end.
 * There is a 6N UMI barcode on R1. Pipeline will perform PCR deduplicat.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --RNA3=R1_5prime -T myOutput3 -O myOutput3 -I PREFIX --UMI1=6 --ADAPT1=GATCGTCGGACTGTAGAACTCTGAAC --ADAPT2=TGGAATTCTCGGGTGCCAAGG
