@@ -618,14 +618,13 @@ for name in ${FQ_INPUT[@]}
   # Remove adapter
   cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_1.fastq ${old_name}_1.fq.gz &
   cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_2.fastq ${old_name}_2.fq.gz &
-  wait
 
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
    cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_1.fastq -q 20 &
    cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_1.fastq --output=${TMPDIR}/${name}_q20trim_1.fastq -q 20 &
-   wait
+
    cat ${TMPDIR}/${name}_q20trim_1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_1.fastq &
 
   # Read2
@@ -633,10 +632,9 @@ for name in ${FQ_INPUT[@]}
    n1=$[UMI1+ADD_B1]
    cutadapt --cut -${n1} --minimum-length=10 ${TMPDIR}/${name}_trim_2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_2.fastq -q 20 &
    cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_2.fastq --output=${TMPDIR}/${name}_q20trim_2.fastq -q 20 &
-   wait
+
    cat ${TMPDIR}/${name}_q20trim_2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_2.fastq &
 
-  wait
   echo 'Number of reads after adapter removal and QC:' >> ${TMPDIR}/${name}.QC.log
   echo R1 >> ${TMPDIR}/${name}.QC.log
   cat ${TMPDIR}/noadapt/${name}_noadapt_1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
@@ -654,7 +652,7 @@ for name in ${FQ_INPUT[@]}
    # fastq with the first dedup_L nt
    cat ${TMPDIR}/noadapt/${name}_noadapt_1.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_1.fastq &
    cat ${TMPDIR}/noadapt/${name}_noadapt_2.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_2.fastq &
-   wait
+
    
    # deduplicate using the first dedup_L nt
    prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_1.fastq -fastq2 ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_2.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -663,7 +661,7 @@ for name in ${FQ_INPUT[@]}
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt &
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons_l${dedup_L}.txt &
    cat ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons.fastq | awk '(NR%4==1){print substr($1,2)}' > ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons_l${dedup_L}.txt &
-   wait
+
    rm ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons.fastq
 
    # generate fastq from the list of name
@@ -671,13 +669,13 @@ for name in ${FQ_INPUT[@]}
     seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_2.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq &
     seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_1.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_1_singletons_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_1_singletons.fastq &
     seqtk subseq ${TMPDIR}/noadapt/${name}_noadapt_2.fastq ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup_2_singletons_l${dedup_L}.txt > ${TMPDIR}/passQC/${name}_dedup_2_singletons.fastq &
-    wait
+
     rm ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup*l${dedup_L}.txt &
      
     # trim the UMI and additional barcode after dereplicate
      prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd &
      prinseq-lite.pl -trim_left ${n2} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd &
-     wait
+  
      rm ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq
     # min_len 15
      prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -711,8 +709,6 @@ for name in ${FQ_INPUT[@]}
   cat ${OUTPUT}/${name}.prinseq-pcrDups.gd
 
  done
-
-wait
 # if there is a data-set wide length cutoff map_L
 if [[ ${map_L} != 0 ]]; then
    mkdir ${TMPDIR}/passQC_length_${map_L}
@@ -724,10 +720,8 @@ if [[ ${map_L} != 0 ]]; then
     do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 4-|rev`
     cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_2.fastq &
    done
-   wait
-fi 
 
-wait
+fi 
 ## Cleanup.
 rm -r ${TMPDIR}/noadapt 
 gzip ${TMPDIR}/passQC*/*.fastq 
@@ -815,8 +809,7 @@ fi
 for name in ${QC_INPUT}
   do
   cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} &
-done
-wait
+don
 
 
 
@@ -884,13 +877,12 @@ for f in ${TMPDIR}/*.sort.bam
    ## normalized by RPM
    cat ${TMPDIR}/$j\_plus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4*1000*1000/'$readCount'/1}' > ${TMPDIR}/$j\_plus.rpm.bedGraph  &
    cat ${TMPDIR}/$j\_minus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4*1000*1000/'$readCount'/1}' > ${TMPDIR}/$j\_minus.rpm.bedGraph  &
-   wait
+
    ## Then to bigWig (nomalized and non-nomrmalized ones)
    bedGraphToBigWig ${TMPDIR}/$j\_plus.rpm.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.rpm.bw 
    bedGraphToBigWig ${TMPDIR}/$j\_minus.rpm.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.rpm.bw 
    bedGraphToBigWig ${TMPDIR}/$j\_plus.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.bw 
-   bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw 
-wait
+   bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw
 
    rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
  done
@@ -929,10 +921,9 @@ for name in ${FQ_INPUT[@]}
    n1=$[UMI1+ADD_B1]
    cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved.fastq -q 20 &
    cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim.fastq --output=${TMPDIR}/${name}_q20trim.fastq -q 20 &
-   wait
+
    cat ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt.fastq &
 
-  wait
   echo 'Number of reads after adapter removal and QC:' >> ${TMPDIR}/${name}.QC.log
   cat ${TMPDIR}/noadapt/${name}_noadapt.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
 
@@ -986,7 +977,6 @@ for name in ${FQ_INPUT[@]}
   fi
 
   cat ${OUTPUT}/${name}.prinseq-pcrDups.gd
-  wait
 done
 
 # if there is a data-set wide length cutoff map_L
@@ -996,11 +986,9 @@ if [[ ${map_L} != 0 ]]; then
     do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 3-|rev`
     cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end.fastq &
    done
-   wait
+
 fi 
 
-
-wait
 ## Cleanup.
 rm -r ${TMPDIR}/noadapt 
 gzip ${TMPDIR}/passQC*/*.fastq 
@@ -1072,12 +1060,12 @@ if [[ -z "$DREG_MODEL" ]]; then
       bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
       samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
-      wait
+  
     for name in ${QC_INPUT}
       do
       cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
       done
-      wait
+  
   else #default use aln
     for name in ${QC_INPUT}
       do
@@ -1088,19 +1076,19 @@ echo "bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
       bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
       bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fq.gz &
     done
-    wait
+
     for name in ${QC_INPUT}
       do
       echo "samtools view -b -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam"
       samtools view -b -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
     done
-    wait
+
     for name in ${QC_INPUT}
       do
       rm ${ToMapDir}/${name}_end.sam
       cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
     done
-    wait
+
    fi
 else #dREG
   echo "Aligning reads using the same parameters with dREG" 
@@ -1111,23 +1099,19 @@ else #dREG
     bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fq.gz &
     done
   
-  wait
 
   for name in ${QC_INPUT}
     do
     samtools view -b -q 0 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
     done
   
-  wait
   for name in ${QC_INPUT}
    do
    rm ${ToMapDir}/${name}_end.sam
    cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
    done
-   wait
-fi
 
-wait
+fi
 
 
 ## Cleanup
@@ -1177,11 +1161,11 @@ for f in ${TMPDIR}/*.sort.bam
    ## normalized by RPM
    cat ${TMPDIR}/$j\_plus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4*1000*1000/'$readCount'/1}' > ${TMPDIR}/$j\_plus.rpm.bedGraph  &
    cat ${TMPDIR}/$j\_minus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4*1000*1000/'$readCount'/1}' > ${TMPDIR}/$j\_minus.rpm.bedGraph  &
-   wait
+
    ## Then to bigWig (nomalized and non-nomrmalized ones)
    bedGraphToBigWig ${TMPDIR}/$j\_plus.rpm.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.rpm.bw 
    bedGraphToBigWig ${TMPDIR}/$j\_minus.rpm.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.rpm.bw 
-   wait
+
    bedGraphToBigWig ${TMPDIR}/$j\_plus.bedGraph ${CHINFO} ${OUTPUT}/$j\_plus.bw 
    bedGraphToBigWig ${TMPDIR}/$j\_minus.bedGraph ${CHINFO} ${OUTPUT}/$j\_minus.bw 
 #   rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
