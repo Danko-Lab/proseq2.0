@@ -675,7 +675,7 @@ for name in ${FQ_INPUT[@]}
     # trim the UMI and additional barcode after dereplicate
      prinseq-lite.pl -trim_left ${n1} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd &
      prinseq-lite.pl -trim_left ${n2} -fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd &
-  
+
      rm ${TMPDIR}/passQC/${name}_dedup_withBarcode_1.fastq ${TMPDIR}/passQC/${name}_dedup_withBarcode_2.fastq
     # min_len 15
      prinseq-lite.pl -min_len 15 -fastq ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_1.fastq -fastq2 ${TMPDIR}/passQC/${name}_dedup_BarcodeRemoved_2.fastq -out_format 3 -out_bad null -out_good ${TMPDIR}/passQC/${name}_dedup_QC_end 2>> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -721,7 +721,7 @@ if [[ ${map_L} != 0 ]]; then
     cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_2.fastq &
    done
 
-fi 
+fi
 ## Cleanup.
 rm -r ${TMPDIR}/noadapt 
 gzip ${TMPDIR}/passQC*/*.fastq 
@@ -887,7 +887,7 @@ for f in ${TMPDIR}/*.sort.bam
    rm ${TMPDIR}/$j.nr.rs.bed.gz ${TMPDIR}/$j.bed.gz ${TMPDIR}/$j*.bedGraph
  done
 
-fi #*/
+fi
 
 
 if [[ "$SEQ" == "SE" ]] ; then 
@@ -1060,12 +1060,12 @@ if [[ -z "$DREG_MODEL" ]]; then
       bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
       samtools view -b -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
       done
-  
+
     for name in ${QC_INPUT}
       do
       cp ${TMPDIR}/${name}.sort.bam ${OUTPUT} & ## Saves the sorted BAM in the output file.
       done
-  
+
   else #default use aln
     for name in ${QC_INPUT}
       do
@@ -1098,13 +1098,13 @@ else #dREG
     bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_end.fq.gz | \
     bwa samse -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} - ${ToMapDir}/${name}_end.fq.gz &
     done
-  
+
 
   for name in ${QC_INPUT}
     do
     samtools view -b -q 0 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam &
     done
-  
+
   for name in ${QC_INPUT}
    do
    rm ${ToMapDir}/${name}_end.sam
