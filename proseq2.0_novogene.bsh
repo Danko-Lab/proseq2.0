@@ -1177,4 +1177,4 @@ for f in ${TMPDIR}/*.sort.bam
 
 #############################################
 ## CLEANUP!
-#rm -Rf ${TMPDIR}
+rm -rf ${TMPDIR}
