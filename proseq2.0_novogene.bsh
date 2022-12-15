@@ -619,6 +619,7 @@ for name in ${FQ_INPUT[@]}
   cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${old_name}_R1.fastq.gz &
   cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${old_name}_R2.fastq.gz &
   echo 'Removed adapters' >> ${TMPDIR}/${name}.QC.log
+  wait
 
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
