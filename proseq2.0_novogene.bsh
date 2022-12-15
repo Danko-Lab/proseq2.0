@@ -616,16 +616,16 @@ for name in ${FQ_INPUT[@]}
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${old_name}_R1.fastq.gz
-  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${old_name}_R2.fastq.gz
+  cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${old_name}_R1.fastq.gz -j ${thread}
+  cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${old_name}_R2.fastq.gz -j ${thread}
   echo 'Removed adapters' >> ${TMPDIR}/${name}.QC.log
   wait
 
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
-   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20
-   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20
+   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20 -j ${thread}
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 ${thread}
    cat ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq
    echo 'Removed UMI2 and ADD_B2 from the 3 prime end of R1' >> ${TMPDIR}/${name}.QC.log
    wait
@@ -633,8 +633,8 @@ for name in ${FQ_INPUT[@]}
   # Read2
   # remove UMI1 and ADD_B1 from the 3 prime end of R2
    n1=$[UMI1+ADD_B1]
-   cutadapt --cut -${n1} --minimum-length=10 ${TMPDIR}/${name}_trim_R2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq -q 20
-   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20
+   cutadapt --cut -${n1} --minimum-length=10 ${TMPDIR}/${name}_trim_R2.fastq --output=${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq -q 20 -j ${thread}
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20 -j ${thread}
    cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq
    echo 'Removed UMI1 and ADD_B1 from the 3 prime end of R2' >> ${TMPDIR}/${name}.QC.log
    wait
@@ -925,13 +925,13 @@ for name in ${FQ_INPUT[@]}
 
   ## Remove adapter, UMI barcode, additional barcode, and low quality (q=20) base from 3prime end of reads. Keep read length >=15 after trimmming
   # Remove adapter
-  cutadapt -a ${ADAPT_SE} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${old_name}.fastq.gz
+  cutadapt -a ${ADAPT_SE} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim.fastq --untrimmed-output=${TMPDIR}/${name}_untrim.fastq ${old_name}.fastq.gz -j ${thread}
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
    n1=$[UMI1+ADD_B1]
-   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved.fastq -q 20
-   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim.fastq --output=${TMPDIR}/${name}_q20trim.fastq -q 20
+   cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved.fastq -q 20 -j ${thread}
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim.fastq --output=${TMPDIR}/${name}_q20trim.fastq -q 20 -j ${thread}
    wait
    cat ${TMPDIR}/${name}_q20trim.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt.fastq
 
