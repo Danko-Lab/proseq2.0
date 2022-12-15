@@ -306,13 +306,13 @@ if [ -z "$SEQ" ]; then
   exit 1
 fi
 
-if [[ "$mem" == 1& "$aln" == 1 ]]; then
+if [[ "$mem" == 1 && "$aln" == 1 ]]; then
     echo "Please choose between -mem or -aln"
     echo " use bash proseq2.0.bsh --help."
     exit 1
 fi
 
-## INPUT Parameters
+## INPUT & Parameters
 # PE
 if [[ "$SEQ" == "PE" ]] ; then
   if [ -z "$SE_OUTPUT" ]; then
@@ -459,7 +459,7 @@ if [ -z "$map_L" ]; then
 fi
 
 if [[ "$SEQ" == "PE" ]]; then
-  if [[ -z "$RNA5"& -z "$RNA3" ]]; then
+  if [[ -z "$RNA5" && -z "$RNA3" ]]; then
     RNA5="R1_5prime"
   fi
   if [[ "$RNA3" == "R1_5prime" ]]; then
@@ -485,7 +485,7 @@ if [ -z "$MAP5" ]; then
 fi
 
 
-if [[ "${MAP5}" == "FALSE"& "$SEQ" == "SE" ]] ; then
+if [[ "${MAP5}" == "FALSE" && "$SEQ" == "SE" ]] ; then
   echo "For single-end (SE), can only report the 5 prime end of reads (--map5=TRUE)"
   exit 1
 fi
@@ -1150,11 +1150,11 @@ for f in ${TMPDIR}/*.sort.bam
 # in SE, MAP5 alwasys TRUE
 
 
-   #if [[ "${RNA5}" == "R1_5prime"& "${OPP}" == "FALSE" ]] ; then ## report The 5 prime end of the RNA.   #like GRO-seq
+   #if [[ "${RNA5}" == "R1_5prime" && "${OPP}" == "FALSE" ]] ; then ## report The 5 prime end of the RNA.   #like GRO-seq
    if [[ "$SE_OUTPUT" == "G" ]] ; then
       bedtools bamtobed -i $f 2> ${TMPDIR}/kill.warnings| awk 'BEGIN{OFS="\t"} ($5 > 0){print $0}' | \
       awk 'BEGIN{OFS="\t"} ($6 == "+") {print $1,$2,$2+1,$4,$5,$6}; ($6 == "-") {print $1,$3-1,$3,$4,$5,$6}' | gzip > ${TMPDIR}/$j.bed.gz
-   #elif [[ "${RNA3}" == "R1_5prime"& "${OPP}" == "TRUE" ]] ; then  #like PRO-seq
+   #elif [[ "${RNA3}" == "R1_5prime" && "${OPP}" == "TRUE" ]] ; then  #like PRO-seq
     elif [[ "$SE_OUTPUT" == "P" ]] ; then
       bedtools bamtobed -i $f 2> ${TMPDIR}/kill.warnings| awk 'BEGIN{OFS="\t"} ($5 > 0){print $0}' | \
       awk 'BEGIN{OFS="\t"} ($6 == "+") {print $1,$2,$2+1,$4,$5,"-"}; ($6 == "-") {print $1,$3-1,$3,$4,$5,"+"}' | gzip > ${TMPDIR}/$j.bed.gz
