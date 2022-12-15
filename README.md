@@ -3,9 +3,9 @@ Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Re
 
 Currently we provide two commands: proseq mapper and bigWig merge.
 
-# NOVOGENE MODIFICATION:
+# MULTITHREADING:
 
-**Novogene paired end files are named PREFIX_1.fq.gz and PREFIX_2.fq.gz. This fork changes the references in proseq2.0.bsh to use this standard.**
+This is a fork of the original [proseq2.0](https://github.com/Danko-Lab/proseq2.0.git) repo. This package 1) multithreads cutadapt (ensure you have `pigz` installed on top of the requirements in proseq2.0 and 2) executes all commands in `./proseq2.0.bsh` sequentially in the main shell (no farming out commands to the background with `&`. This should fix an issue in the original proseq2.0 where the script would randomly hang.
 
 ## Overview
 Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
