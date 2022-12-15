@@ -1,4 +1,4 @@
-# Proseq2.0
+# Proseq2.0_mt
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing. It is a new version of ProseqMapper (https://github.com/Danko-Lab/utils/tree/master/proseq).
 
 Currently we provide two commands: proseq mapper and bigWig merge.
