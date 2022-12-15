@@ -624,7 +624,7 @@ for name in ${FQ_INPUT[@]}
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
    n2=$[UMI2+ADD_B2]
    cutadapt --cut -${n2} --minimum-length=10 ${TMPDIR}/${name}_trim_R1.fastq --output=${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq -q 20 -j ${thread}
-   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 ${thread}
+   cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 -j ${thread}
    cat ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq
    echo 'Removed UMI2 and ADD_B2 from the 3 prime end of R1' >> ${TMPDIR}/${name}.QC.log
 
