@@ -619,6 +619,7 @@ for name in ${FQ_INPUT[@]}
   cutadapt -a ${ADAPT2} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R1.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R1.fastq ${old_name}_R1.fastq.gz &
   cutadapt -a ${ADAPT1} -e 0.10 --overlap 2 --output=${TMPDIR}/${name}_trim_R2.fastq --untrimmed-output=${TMPDIR}/${name}_untrim_R2.fastq ${old_name}_R2.fastq.gz &
   wait
+  echo 'Removed adapters' >> ${TMPDIR}/${name}.QC.log
 
   # Read1
   # remove UMI2 and ADD_B2 from the 3 prime end of R1
@@ -627,6 +628,7 @@ for name in ${FQ_INPUT[@]}
    cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R1.fastq --output=${TMPDIR}/${name}_q20trim_R1.fastq -q 20 &
    wait
    cat ${TMPDIR}/${name}_q20trim_R1.fastq ${TMPDIR}/${name}_trim.${n2}Nremoved_R1.fastq | paste - - - - |LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq &
+   echo 'Removed UMI2 and ADD_B2 from the 3 prime end of R1' >> ${TMPDIR}/${name}.QC.log
 
   # Read2
   # remove UMI1 and ADD_B1 from the 3 prime end of R2
@@ -635,6 +637,7 @@ for name in ${FQ_INPUT[@]}
    cutadapt --minimum-length=10 ${TMPDIR}/${name}_untrim_R2.fastq --output=${TMPDIR}/${name}_q20trim_R2.fastq -q 20 &
    wait
    cat ${TMPDIR}/${name}_q20trim_R2.fastq ${TMPDIR}/${name}_trim.${n1}Nremoved_R2.fastq | paste - - - - | LC_ALL=C sort --temporary-directory=${TMPDIR} --parallel=10 -k1,1 -S 10G | tr '\t' '\n' > ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq &
+   echo 'Removed UMI1 and ADD_B1 from the 3 prime end of R2' >> ${TMPDIR}/${name}.QC.log
 
   wait
   echo 'Number of reads after adapter removal and QC:' >> ${TMPDIR}/${name}.QC.log
