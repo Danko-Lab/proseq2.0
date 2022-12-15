@@ -412,6 +412,7 @@ if [ ! -d $TMPDIR ]; then
 fi
 # bash generate random 32 character alphanumeric string (upper and lowercase).
 tmp=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+TMPR=$TMPDIR
 TMPDIR=$TMPDIR/$tmp
 
 if [ -z "$thread" ]; then
@@ -1177,4 +1178,4 @@ for f in ${TMPDIR}/*.sort.bam
 
 #############################################
 ## CLEANUP!
-rm -rf ${TMPDIR}
+rm -rf ${TMPR}
