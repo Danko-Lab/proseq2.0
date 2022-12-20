@@ -1,11 +1,11 @@
-# Proseq2.0_mt
+# Proseq2.0
 Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Read or Paired-End Illumina Sequencing. It is a new version of ProseqMapper (https://github.com/Danko-Lab/utils/tree/master/proseq).
 
 Currently we provide two commands: proseq mapper and bigWig merge.
 
 # MULTITHREADING:
 
-This is a fork of the original [proseq2.0](https://github.com/Danko-Lab/proseq2.0.git) repo. This package 1) multithreads cutadapt and 2) executes all commands in `./proseq2.0.bsh` sequentially in the main shell (no farming out commands to the background with `&`. This should fix an issue in the original proseq2.0 where the script would randomly hang.
+This is a fork of the original [proseq2.0](https://github.com/Danko-Lab/proseq2.0.git) repo. This package 1) multithreads cutadapt and 2) executes all commands in `./proseq2.0.bsh` sequentially in the main shell (no farming out commands to the background with `&`. This should fix an issue in the original proseq2.0 where the script would randomly hang on the `wait` lines.
 
 ## Overview
 Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
