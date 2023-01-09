@@ -3,6 +3,10 @@ Preprocesses and Aligns Run-On Sequencing (PRO/GRO/ChRO-seq) data from Single-Re
 
 Currently we provide two commands: proseq mapper and bigWig merge.
 
+# MULTITHREADING:
+
+This is a fork of the original [proseq2.0](https://github.com/Danko-Lab/proseq2.0.git) repo. This package 1) multithreads cutadapt and 2) executes all commands in `./proseq2.0.bsh` sequentially in the main shell (no farming out commands to the background with `&`. This should fix an issue in the original proseq2.0 where the script would randomly hang on the `wait` lines.
+
 ## Overview
 Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fastq.gz format as input. The pipeline will automate three routine pre-processing and alignment options, including
 + pre-processing reads: remove the adapter sequence and quality trim the reads (cutadapt), deduplicate the reads if UMI barcodes are used (prinseq-lite.pl)
@@ -18,7 +22,7 @@ Chu, T., Wang, Z., Chou, S. P., & Danko, C. G. (2018). Discovering Transcription
 
 ## Dependencies
 
-The pipelines depend on several common bioinformatics tools: 
+The pipelines depend on several common bioinformatics tools:
 - [ ] cutadapt (https://cutadapt.readthedocs.io/en/stable/installation.html)
 - [ ] fastx_trimmer (http://hannonlab.cshl.edu/fastx_toolkit/commandline.html)
 - [ ] seqtk (https://github.com/lh3/seqtk)
@@ -28,16 +32,16 @@ The pipelines depend on several common bioinformatics tools:
 - [ ] bedtools v2.28.0 (http://bedtools.readthedocs.org/en/latest/)
 - [ ] bedGraphToBigWig (from the Kent source utilities http://hgdownload.cse.ucsc.edu/admin/exe/)
 
-Please make sure you can call the bioinformatics tools from your current working directory.    
+Please make sure you can call the bioinformatics tools from your current working directory.
 
 ## Usage
 ```
 Preprocesses and aligns PRO-seq data.
 
-Takes PREFIX.fastq.gz (SE),  PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz (PE)
+Takes PREFIX.fastq.gz (SE),  PREFIX_1.fastq.gz, PREFIX_2.fastq.gz (PE)
 or *.fastq.gz in the current working directory as input and writes
 BAM and bigWig files as output to the user-assigned output-dir.
-The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization. 
+The output bigWig files ending with _minus.bw or _plus.bw are raw read counts without normalization.
 The RPM normalized outputs end with a suffix of .rpm.bw.
 
 
@@ -61,8 +65,8 @@ Required options:
 I/O options:
 -I, --fastq=PREFIX     Prefix for input files.
                        Paired-end files require identical prefix
-                       and end with _R1.fastq.gz and _R2.fastq.gz
-                       eg: PREFIX_R1.fastq.gz, PREFIX_R2.fastq.gz.
+                       and end with _1.fastq.gz and _2.fastq.gz
+                       eg: PREFIX_1.fastq.gz, PREFIX_2.fastq.gz.
 -T, --tmp=PATH         Path to a temporary storage directory.
 -O, --output-dir=DIR   Specify a directory to store output in.
 
@@ -115,7 +119,7 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 
 -4DREG             Using the pre-defined parameters to get the most reads
                    for dREG package. Please use this flag to make the bigWig
-                   files compatible with dREG algorithm. Only available for 
+                   files compatible with dREG algorithm. Only available for
                    Single-end sequencing.[default: off]
 -aln               Use BWA-backtrack [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]
 -mem               Use BWA-MEM [default: SE uses BWA-backtrack (aln), PE uses BWA-MEM (mem)]
@@ -127,7 +131,7 @@ When UMI1 or UMI2 are set > 0, the pipeline will perform PCR deduplicate.
 
 
 ## Examples
-The pipeline requires two parameters for genome information, including BWA index (--bwa-index) and chrom info (--chrom-info). 
+The pipeline requires two parameters for genome information, including BWA index (--bwa-index) and chrom info (--chrom-info).
 
 __BWA index__ should be generated using the __bwa index__ command according to BWA manual at http://bio-bwa.sourceforge.net/bwa.shtml . Please note that the program only take in the prefix when you assign the index, no ".bwt" in the end. See the BWA manual for more details.
 
@@ -141,7 +145,7 @@ export chromInfo=PathToChromInfo
 
 ### Example 1
 
-PREFIX.fastq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941 
+PREFIX.fastq.gz were made according to GRO-seq protocol as in  https://www.ncbi.nlm.nih.gov/pubmed/19056941
 Give UMI1=6, the pipeline will remove PCR duplicates and trim the 6bp UMI barcode.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -G -T myOutput1 -O myOutput1 --UMI1=6 -I PREFIX
@@ -155,16 +159,16 @@ bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -SE -P -T myOutput2 -O myOutput2 -
 ```
 ### Example 3
 
-__PREFIX_R1.fastq.gz__ and __PREFIX_R2.fastq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
-* Please note that Paired-end files require identical PREFIX and end with _R1.fastq.gz and _R2.fastq.gz.
+__PREFIX_1.fastq.gz__ and __PREFIX_2.fastq.gz__ were Paired-End sequenced as in chromatin run-on and sequencing (ChRO-seq) in https://www.biorxiv.org/content/early/2017/09/07/185991
+* Please note that Paired-end files require identical PREFIX and end with _1.fastq.gz and _2.fastq.gz.
 
-  Assign the file use __-I PREFIX__. No _R1.fastq.gz, _R2.fastq.gz, nor *fastq.gz is in the end.
-* There is a 6N UMI barcode on R1. Pipeline will perform PCR deduplicat. 
+  Assign the file use __-I PREFIX__. No _1.fastq.gz, _2.fastq.gz, nor *fastq.gz is in the end.
+* There is a 6N UMI barcode on R1. Pipeline will perform PCR deduplicat.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --RNA3=R1_5prime -T myOutput3 -O myOutput3 -I PREFIX --UMI1=6 --ADAPT1=GATCGTCGGACTGTAGAACTCTGAAC --ADAPT2=TGGAATTCTCGGGTGCCAAGG
 ```
 ### Example 4
-Same as in Example 3 but without UMI barcode. 
+Same as in Example 3 but without UMI barcode.
 * UMI1 and UMI2 were set to 0 by default. The pipeline will NOT remove PCR duplicates.
 ```
 bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --RNA3=R1_5prime -T myOutput4 -O myOutput4 -I PREFIX --ADAPT1=GATCGTCGGACTGTAGAACTCTGAAC --ADAPT2=TGGAATTCTCGGGTGCCAAGG
@@ -185,12 +189,12 @@ bash proseq2.0.bsh -i $bwaIndex -c $chromInfo -PE --UMI1=4 --UMI2=4 --ADD_B1=6 -
 ## Notes for **CBSUdanko** users:
 
 1. Setup your environment to use the bioinformatics tools (e.g. prinseq-lite.pl,bedGraphToBigWig,samtools...)
-``` 
+```
 export PATH=$PATH:/programs/prinseq-lite-0.20.2:/programs:/home/zw355/lib/bin:/home/zw355/lib/ucsc
 ```
 
 2. Find the BWA index and chromosome table in the server:
-``` 
+```
 export human_genome=/local/storage/data/short_read_index/hg19/bwa.rRNA-0.7.5a-r405/hg19.rRNA
 export human_chinfo=/local/storage/data/hg19/hg19.chromInfo
 
@@ -199,13 +203,13 @@ export mouse_chinfo=/local/storage/data/mm10/mm10.chromInfo
 
 export dog_genome=/local/storage/data/short_read_index/canFam3/bwa.rRNA-0.7.8-r455/canFam3.rRNA.fa
 export dog_chinfo=/local/storage/data/canFam3/canFam3.chromInfo
-``` 
+```
 
 3. Using --UMI1=6 to replace -b6 if you have used it in the old version (proseqMapper.bsh).
 
 ## Notes for **dREG** users:
 
-In order to make the most compatible with dREG algorithm, please use **-4DREG** flag when you process the PRO-seq and GRO-seq reads. The dREG package needs enriched reads to 
+In order to make the most compatible with dREG algorithm, please use **-4DREG** flag when you process the PRO-seq and GRO-seq reads. The dREG package needs enriched reads to
 detect the transcriptional peaks, we use the "bwa aln" to do mappping and set lower filtering score (0) to get the most reads in this pipeline. Only available for Single-end sequencing.
 
 Here is an examples to generate the bigWig for dREG.
