@@ -26,6 +26,7 @@ The pipelines depend on several common bioinformatics tools:
 - [ ] bwa (https://sourceforge.net/projects/bio-bwa/files/)
 - [ ] samtools version: 1.9 (http://www.htslib.org/download/)
 - [ ] bedtools v2.28.0 (http://bedtools.readthedocs.org/en/latest/)
+- [ ] bedops (https://bedops.readthedocs.io/en/latest/)
 - [ ] bedGraphToBigWig (from the Kent source utilities http://hgdownload.cse.ucsc.edu/admin/exe/)
 
 Please make sure you can call the bioinformatics tools from your current working directory.
