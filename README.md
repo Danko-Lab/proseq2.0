@@ -13,6 +13,8 @@ To run our pipeline users must first download the pipeline files and install dep
 
 Please note that proseq2.0 does __NOT__ include steps to ensure chrM reads are really from mitochondrial RNA polymerase. All reads mapped to rRNA or chrM will be removed from bigWig files.
 
+Also note that the reference genome used for read mapping should include a copy of the rDNA to avoid misalignment to genomic rDNA repeats. We use GenBank ID# U13369.1 (https://www.ncbi.nlm.nih.gov/nuccore/555853) for most studies. Your work may require using a species-specific rDNA reference. 
+
 ## Citation
 Chu, T., Wang, Z., Chou, S. P., & Danko, C. G. (2018). Discovering Transcriptional Regulatory Elements From Run‐On and Sequencing Data Using the Web‐Based dREG Gateway. Current protocols in bioinformatics, e70.
 
