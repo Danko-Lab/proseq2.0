@@ -11,9 +11,13 @@ Our proseq2.0 pipeline will take single-end or paired-end sequencing reads in fa
 
 To run our pipeline users must first download the pipeline files and install dependencies indicated in this README.md. In addition, user need to provide a path to a BWA index file and the path to the chromInfo file for the genome of choice. After running this pipeline, users should have processed data files in the specified output directory.
 
-Please note that proseq2.0 does __NOT__ include steps to ensure chrM reads are really from mitochondrial RNA polymerase. All reads mapped to rRNA or chrM will be removed from bigWig files.
+Please consider the following notes on the genome index file: 
 
-Also note that the reference genome used for read mapping should include a copy of the rDNA to avoid misalignment to genomic rDNA repeats. We use GenBank ID# U13369.1 (https://www.ncbi.nlm.nih.gov/nuccore/555853) for most studies. Your work may require using a species-specific rDNA reference. 
+* Please note that proseq2.0 does __NOT__ include steps to ensure chrM reads are really from mitochondrial RNA polymerase. All reads mapped to rRNA or chrM will be removed from bigWig files.
+
+* The reference genome used for read mapping should include a copy of the rDNA to avoid misalignment to genomic rDNA repeats. We use GenBank ID# U13369.1 (https://www.ncbi.nlm.nih.gov/nuccore/555853) for most studies. Your work may require using a species-specific rDNA reference.
+
+* The reference genome should strip out chromosomes representing alternative haplotypes (*_hap or *_random).
 
 ## Citation
 Chu, T., Wang, Z., Chou, S. P., & Danko, C. G. (2018). Discovering Transcriptional Regulatory Elements From Run‐On and Sequencing Data Using the Web‐Based dREG Gateway. Current protocols in bioinformatics, e70.
