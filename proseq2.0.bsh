@@ -14,7 +14,7 @@ while test $# -gt 0; do
     echo "The RPM normalized outputs end with a suffix of .rpm.bw."
     echo ""
     echo "Requirements in current working directory:"
-    echo "cutadapt 1.8.3, fastx_trimmer, seqtk, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, and bedGraphToBigWig."
+    echo "cutadapt 1.8.3, seqtk, prinseq-lite.pl 0.20.2, bwa, samtools, bedtools, and bedGraphToBigWig."
     echo ""
     echo "bash proseq2.0.bsh [options]"
     echo ""
@@ -503,7 +503,7 @@ else
 fi
 
 ## Check all the bioinformatics tools can be called from current working directory.
-for tool in cutadapt fastx_trimmer seqtk prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig sort-bed
+for tool in cutadapt seqtk prinseq-lite.pl bwa samtools bedtools bedGraphToBigWig sort-bed
 do command -v ${tool} >/dev/null 2>&1 || { echo >&2 ${tool}" is required. Please make sure you can call the bioinformatics tools from your current working directoryb.  Aborting."; exit 1; }
 done
 
@@ -652,8 +652,8 @@ for name in ${FQ_INPUT[@]}
    # Remove PCR duplciates.
 
    # fastq with the first dedup_L nt
-   cat ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq
-   cat ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq
+   seqtk seq -L ${dedup_L} ${TMPDIR}/noadapt/${name}_noadapt_R1.fastq > ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq
+   seqtk seq -L ${dedup_L} ${TMPDIR}/noadapt/${name}_noadapt_R2.fastq > ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq
 
    # deduplicate using the first dedup_L nt
    prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R1.fastq -fastq2 ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}_R2.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
@@ -713,11 +713,11 @@ if [[ ${map_L} != 0 ]]; then
    mkdir ${TMPDIR}/passQC_length_${map_L}
    for f in ${TMPDIR}/passQC/*_QC_end_1.fastq
     do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 4-|rev`
-    cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_1.fastq
+    seqtk seq -L ${map_L} ${f} > ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_1.fastq   
    done
    for f in ${TMPDIR}/passQC/*_QC_end_2.fastq
     do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 4-|rev`
-    cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_2.fastq
+    seqtk seq -L ${map_L} ${f} > ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end_2.fastq
    done
 fi
 
@@ -931,7 +931,7 @@ for name in ${FQ_INPUT[@]}
   if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then
    # Remove PCR duplciates.
    # fastq with the first dedup_L nt
-   cat ${TMPDIR}/noadapt/${name}_noadapt.fastq | fastx_trimmer -Q33 -l ${dedup_L} -o ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq
+   seqtk seq -L ${dedup_L} ${TMPDIR}/noadapt/${name}_noadapt.fastq > ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq
    # deduplicate using the first dedup_L nt
    prinseq-lite.pl -fastq ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq -derep 1 -out_format 3 -out_bad null -out_good ${TMPDIR}/noadapt/l${dedup_L}_nodups/${name}_dedup -min_len 15 2> ${OUTPUT}/${name}.prinseq-pcrDups.gd
    rm ${TMPDIR}/noadapt/l${dedup_L}/${name}_noadapt_l${dedup_L}.fastq
@@ -980,7 +980,7 @@ if [[ ${map_L} != 0 ]]; then
    mkdir ${TMPDIR}/passQC_length_${map_L}
    for f in ${TMPDIR}/passQC/*_QC_end.fastq
     do name=`echo $f |rev |cut -d / -f 1 |cut -d _ -f 3-|rev`
-    cat ${f} | fastx_trimmer -Q33 -l ${map_L} -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end.fastq
+    seqtk seq -L ${map_L} ${f} > ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_QC_end.fastq
    done
 fi
 
