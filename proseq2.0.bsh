@@ -594,19 +594,10 @@ if [[ "$SEQ" == "PE" ]] ; then
 ## Preprocess data.  Remove adapters.  Trim.
 echo " "
 
-#!/bin/bash
-
 echo "Preprocessing fastq files with fastp:"
 
 # Create directories
-mkdir -p ${TMPDIR}/noadapt
 mkdir -p ${TMPDIR}/passQC
-
-if [[ ${UMI2} != 0 || ${UMI1} != 0 ]]; then
-        dedup_L=30
-        mkdir -p ${TMPDIR}/noadapt/l${dedup_L}
-        mkdir -p ${TMPDIR}/noadapt/l${dedup_L}_nodups
-fi
 
 for name in ${FQ_INPUT[@]}
 do
@@ -625,8 +616,8 @@ do
                 fastp \
                         -i ${old_name}_R1.fastq.gz \
                         -I ${old_name}_R2.fastq.gz \
-                        -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq \
-                        -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq \
+                        -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz \
+                        -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
                         --adapter_sequence ${ADAPT2} \
                         --adapter_sequence_r2 ${ADAPT1} \
                         --cut_tail --cut_tail_window_size 4 --cut_tail_mean_quality 20 \
@@ -641,8 +632,8 @@ do
                 fastp \
                         -i ${old_name}_R1.fastq.gz \
                         -I ${old_name}_R2.fastq.gz \
-                        -o ${TMPDIR}/noadapt/${name}_trimmed_R1.fastq \
-                        -O ${TMPDIR}/noadapt/${name}_trimmed_R2.fastq \
+                        -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz \
+                        -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
                         --adapter_sequence ${ADAPT2} \
                         --adapter_sequence_r2 ${ADAPT1} \
                         --cut_tail --cut_tail_window_size 4 --cut_tail_mean_quality 20 \
@@ -651,39 +642,43 @@ do
                         --json ${TMPDIR}/${name}_fastp.json \
                         --html ${TMPDIR}/${name}_fastp.html
                 echo "Processed with fastp" >> ${TMPDIR}/${name}.QC.log
-                mv ${TMPDIR}/noadapt/${name}_trimmed_R1.fastq ${TMPDIR}/passQC/${name}_dedup_R1.fastq
-                mv ${TMPDIR}/noadapt/${name}_trimmed_R2.fastq ${TMPDIR}/passQC/${name}_dedup_R2.fastq
         fi
 
         # Log final read counts
         echo "Number of reads after final QC:" >> ${TMPDIR}/${name}.QC.log
         echo R1 >> ${TMPDIR}/${name}.QC.log
-        cat ${TMPDIR}/passQC/${name}_dedup_R1.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
+        zcat ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
         echo R2 >> ${TMPDIR}/${name}.QC.log
-        cat ${TMPDIR}/passQC/${name}_dedup_R2.fastq | grep @ -c >> ${TMPDIR}/${name}.QC.log
+        zcat ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz | grep @ -c >> ${TMPDIR}/${name}.QC.log
 done
 
 # Dataset-wide length filtering (optional, if map_L is set)
 if [[ ${map_L} != 0 ]]; then
         mkdir -p ${TMPDIR}/passQC_length_${map_L}
-        for f in ${TMPDIR}/passQC/*_dedup_R1.fastq
+        for f in ${TMPDIR}/passQC/*_dedup_R1.fastq.gz
         do
                 name=$(echo $f | rev | cut -d '/' -f 1 | rev | cut -d '_' -f 1)
                 fastp \
                         -i ${f} \
-                        -I ${TMPDIR}/passQC/${name}_dedup_R2.fastq \
-                        -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_R1.fastq \
-                        -O ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_R2.fastq \
+                        -I ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
+                        -o ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_R1.fastq.gz \
+                        -O ${TMPDIR}/passQC_length_${map_L}/${name}_l${map_L}_R2.fastq.gz \
                         --max_len1 ${map_L} --max_len2 ${map_L} \
                         --thread ${thread} \
                         --json ${TMPDIR}/${name}_length_filter_fastp.json \
                         --html ${TMPDIR}/${name}_length_filter_fastp.html
         done
+else
+        # Rename files to have the _QC_end.fastq.gz suffix if no length filtering is applied
+        for f in ${TMPDIR}/passQC/*_dedup_R1.fastq.gz
+        do
+                mv ${f} ${f/_dedup/_QC_end}
+                mv ${TMPDIR}/passQC/$(basename ${f} _R1.fastq.gz)_R2.fastq.gz ${TMPDIR}/passQC/$(basename ${f} _dedup_R1.fastq.gz)_QC_end_R2.fastq.gz
+        done
 fi
 
 # Cleanup
-gzip ${TMPDIR}/passQC*/*.fastq
-rm -r ${TMPDIR}/noadapt
+# No need to remove any additional directories, as l${dedup_L}_nodups was not created
 
 #############################################
 ## Align reads.
