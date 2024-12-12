@@ -440,6 +440,11 @@ elif [[ $[UMI2] -lt 0 ]]; then
   echo "UMI2 only take natural number"
   exit 1
 fi
+# Check for invalid UMI configurations
+if [[ ${UMI1} != 0 && ${UMI2} != 0 && ${UMI1} != ${UMI2} ]]; then
+        echo "Error: UMI1 and UMI2 are both specified but not equal. This configuration is not supported. Exiting."
+        exit 1
+fi
 if [ -z "$Force_deduplicate" ]; then
    Force_deduplicate="FALSE"
 elif [[ "$Force_deduplicate" == "TRUE" || "$Force_deduplicate" == "FALSE" ]] ; then
@@ -598,7 +603,6 @@ echo "Preprocessing fastq files with fastp:"
 
 # Create directories
 mkdir -p ${TMPDIR}/passQC
-
 for name in ${FQ_INPUT[@]}
 do
         old_name=${name}
@@ -613,21 +617,55 @@ do
 
         # Run fastp for adapter trimming, quality filtering, and UMI removal
         if [[ ${UMI2} != 0 || ${UMI1} != 0 || ${Force_deduplicate} == "TRUE" ]]; then
-                fastp \
-                        -i ${old_name}_R1.fastq.gz \
-                        -I ${old_name}_R2.fastq.gz \
-                        -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz \
-                        -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
-                        --adapter_sequence ${ADAPT2} \
-                        --adapter_sequence_r2 ${ADAPT1} \
-                        --cut_tail --cut_tail_window_size 4 --cut_tail_mean_quality 20 \
-                        --umi --umi_loc=read2 --umi_len=${UMI1} --umi_loc2=read1 --umi_len2=${UMI2} \
-                        --length_required 15 \
-                        --dedup \
-                        --thread ${thread} \
-                        --json ${TMPDIR}/${name}_fastp.json \
-                        --html ${TMPDIR}/${name}_fastp.html
-                echo "Processed with fastp and deduplicated reads" >> ${TMPDIR}/${name}.QC.log
+                if [[ ${UMI1} == ${UMI2} && ${UMI1} != 0 ]]; then
+                        fastp \
+                                -i ${old_name}_R1.fastq.gz \
+                                -I ${old_name}_R2.fastq.gz \
+                                -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz \
+                                -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
+                                --adapter_sequence ${ADAPT2} \
+                                --adapter_sequence_r2 ${ADAPT1} \
+                                --umi --umi_loc=per_read --umi_len=${UMI1} \
+                                --length_required 15 \
+                                --dedup \
+                                --thread ${thread} \
+                                --json ${TMPDIR}/${name}_fastp.json \
+                                --html ${TMPDIR}/${name}_fastp.html
+                        echo "Processed with fastp and deduplicated reads" >> ${TMPDIR}/${name}.QC.log
+                elif [[ ${UMI1} != 0 && ${UMI2} == 0 ]]; then
+                        fastp \
+                                -i ${old_name}_R1.fastq.gz \
+                                -I ${old_name}_R2.fastq.gz \
+                                -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz \
+                                -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
+                                --adapter_sequence ${ADAPT2} \
+                                --adapter_sequence_r2 ${ADAPT1} \
+                                --umi --umi_loc=read1 --umi_len=${UMI1} \
+                                --length_required 15 \
+                                --dedup \
+                                --thread ${thread} \
+                                --json ${TMPDIR}/${name}_fastp.json \
+                                --html ${TMPDIR}/${name}_fastp.html
+                        echo "Processed with fastp and deduplicated reads (UMI on Read1 only)" >> ${TMPDIR}/${name}.QC.log
+                elif [[ ${UMI2} != 0 && ${UMI1} == 0 ]]; then
+                        fastp \
+                                -i ${old_name}_R1.fastq.gz \
+                                -I ${old_name}_R2.fastq.gz \
+                                -o ${TMPDIR}/passQC/${name}_dedup_R1.fastq.gz \
+                                -O ${TMPDIR}/passQC/${name}_dedup_R2.fastq.gz \
+                                --adapter_sequence ${ADAPT2} \
+                                --adapter_sequence_r2 ${ADAPT1} \
+                                --umi --umi_loc=read2 --umi_len=${UMI2} \
+                                --length_required 15 \
+                                --dedup \
+                                --thread ${thread} \
+                                --json ${TMPDIR}/${name}_fastp.json \
+                                --html ${TMPDIR}/${name}_fastp.html
+                        echo "Processed with fastp and deduplicated reads (UMI on Read2 only)" >> ${TMPDIR}/${name}.QC.log
+                else
+                        echo "Error: Unsupported UMI configuration. Skipping sample: ${name}" >> ${TMPDIR}/${name}.QC.log
+                        continue
+                fi
         else
                 fastp \
                         -i ${old_name}_R1.fastq.gz \
@@ -709,22 +747,22 @@ if [[ ! -z "$PREMAP_BWAIDX" ]]; then
     if [[ ! -z "$aln" ]]; then
         for name in ${QC_INPUT}
         do
-            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
-            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_R1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+            bwa aln -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_R2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
             bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${PREMAP_BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz
             samtools view -bF 0x2 ${ToMapDir}/${name}_end.sam| samtools sort -n -@ 1 - > ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
             rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_end.sam
-            bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq -fq2 ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq
-            gzip ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq
+            bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_R1.fastq -fq2 ${TMPDIR}/Unmapped_to_premap/${name}_R2.fastq
+            gzip ${TMPDIR}/Unmapped_to_premap/${name}_R1.fastq ${TMPDIR}/Unmapped_to_premap/${name}_R2.fastq
             rm ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
         done
     else #defaul use mem
       for name in ${QC_INPUT}
         do
-        bwa mem -k 19 -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz |\
+        bwa mem -k 19 -t 1 ${PREMAP_BWAIDX} ${ToMapDir}/${name}_R1.fastq.gz ${ToMapDir}/${name}_R2.fastq.gz |\
         samtools view -bF 0x2 | samtools sort -n -@ 1 - > ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
-        bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq -fq2 ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq
-        gzip ${TMPDIR}/Unmapped_to_premap/${name}_1.fastq ${TMPDIR}/Unmapped_to_premap/${name}_2.fastq
+        bamToFastq -i ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam -fq ${TMPDIR}/Unmapped_to_premap/${name}_R1.fastq -fq2 ${TMPDIR}/Unmapped_to_premap/${name}_R2.fastq
+        gzip ${TMPDIR}/Unmapped_to_premap/${name}_R1.fastq ${TMPDIR}/Unmapped_to_premap/${name}_R2.fastq
         rm ${TMPDIR}/Unmapped_to_premap/${name}_unmapped.bam
      done
    fi
@@ -742,9 +780,9 @@ if [[ ! -z "$aln" ]]; then # elif -aln was given, use aln
  for name in ${QC_INPUT}
   do
   ## Align using BWA aln
-  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
-  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
-  bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz
+  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_R1.fastq.gz  >  ${TMPDIR}/${name}_aln_sa1.sai
+  bwa aln -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_R2.fastq.gz  >  ${TMPDIR}/${name}_aln_sa2.sai
+  bwa sampe -n 1 -f ${ToMapDir}/${name}_end.sam ${BWAIDX} ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_R1.fastq.gz ${ToMapDir}/${name}_R2.fastq.gz
 
   samtools view -bf 0x2 -q 20 ${ToMapDir}/${name}_end.sam | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
   rm ${TMPDIR}/${name}_aln_sa1.sai ${TMPDIR}/${name}_aln_sa2.sai ${ToMapDir}/${name}_end.sam
@@ -753,7 +791,7 @@ else #defaul use mem
   for name in ${QC_INPUT}
     do
     ## Align using BWA.
-    bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_1.fastq.gz ${ToMapDir}/${name}_2.fastq.gz | \
+    bwa mem -k 19 -t ${thread} ${BWAIDX} ${ToMapDir}/${name}_R1.fastq.gz ${ToMapDir}/${name}_R2.fastq.gz | \
     samtools view -bf 0x2 -q 20 - | samtools sort -n -@ ${thread} - > ${TMPDIR}/${name}.sort.bam
   done
 fi
@@ -867,7 +905,6 @@ do
                         -i ${old_name}.fastq.gz \
                         -o ${TMPDIR}/passQC/${name}_dedup.fastq.gz \
                         --adapter_sequence ${ADAPT_SE} \
-                        --cut_tail --cut_tail_window_size 4 --cut_tail_mean_quality 20 \
                         --umi --umi_loc=read1 --umi_len=${UMI1} --length_required 15 \
                         --dedup \
                         --thread ${thread} \
@@ -879,7 +916,6 @@ do
                         -i ${old_name}.fastq.gz \
                         -o ${TMPDIR}/passQC/${name}_dedup.fastq.gz \
                         --adapter_sequence ${ADAPT_SE} \
-                        --cut_tail --cut_tail_window_size 4 --cut_tail_mean_quality 20 \
                         --length_required 15 \
                         --thread ${thread} \
                         --json ${TMPDIR}/${name}_fastp.json \
