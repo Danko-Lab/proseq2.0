@@ -728,7 +728,7 @@ else
 fi
 echo "Reads for mapping is from :       $ToMapDir"
 
-QC_INPUT=`ls  ${ToMapDir}/*_QC_end_1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
+QC_INPUT=`ls  ${ToMapDir}/*_QC_end_R1.fastq.gz | awk -F"/" '{print $NF}' | rev | cut -d \. -f 3- | cut -d _ -f 2- | rev| sort | uniq`
 
 if [[ ${#QC_INPUT} == 0 ]]; then
   echo "#########################################"
